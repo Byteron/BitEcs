@@ -57,17 +57,9 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public EntityBuilder Add<T>(Entity target = default) where T : class
+        public EntityBuilder Add<T>() where T : class
         {
-            World.AddComponent<T>(_entity, target ?? Entity.None);
-            return this;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public EntityBuilder Add<T>(Type type) where T : class
-        {
-            var typeEntity = World.GetTypeEntity(type);
-            World.AddComponent<T>(_entity, typeEntity);
+            World.AddComponent<T>(_entity);
             return this;
         }
 
@@ -79,39 +71,9 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public EntityBuilder Add<T>(T data, Entity target) where T : class
-        {
-            World.AddComponent(_entity, data, target);
-            return this;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public EntityBuilder Add<T>(T data, Type type) where T : class
-        {
-            var typeEntity = World.GetTypeEntity(type);
-            World.AddComponent(_entity, data, typeEntity);
-            return this;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public EntityBuilder Remove<T>() where T : class
         {
             World.RemoveComponent<T>(_entity);
-            return this;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public EntityBuilder Remove<T>(Entity target) where T : class
-        {
-            World.RemoveComponent<T>(_entity, target);
-            return this;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public EntityBuilder Remove<T>(Type type) where T : class
-        {
-            var typeEntity = World.GetTypeEntity(type);
-            World.RemoveComponent<T>(_entity, typeEntity);
             return this;
         }
 

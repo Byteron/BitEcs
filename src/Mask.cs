@@ -5,9 +5,9 @@ namespace RelEcs
 {
     public sealed class Mask
     {
-        internal readonly List<StorageType> HasTypes = new();
-        internal readonly List<StorageType> NotTypes = new();
-        internal readonly List<StorageType> AnyTypes = new();
+        internal readonly SortedSet<StorageType> HasTypes = new();
+        internal readonly SortedSet<StorageType> NotTypes = new();
+        internal readonly SortedSet<StorageType> AnyTypes = new();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Has(StorageType type)
@@ -34,12 +34,20 @@ namespace RelEcs
 
             unchecked
             {
-                foreach (var type in HasTypes) hash = hash * 314159 + type.Value.GetHashCode();
-                foreach (var type in NotTypes) hash = hash * 314159 - type.Value.GetHashCode();
-                foreach (var type in AnyTypes) hash *= 314159 * type.Value.GetHashCode();
+                foreach (var type in HasTypes) hash = hash * 314159 + type.Id.GetHashCode();
+                foreach (var type in NotTypes) hash = hash * 314159 - type.Id.GetHashCode();
+                foreach (var type in AnyTypes) hash *= 314159 * type.Id.GetHashCode();
             }
 
             return hash;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Clear()
+        {
+            HasTypes.Clear();
+            NotTypes.Clear();
+            AnyTypes.Clear();
         }
     }
 }

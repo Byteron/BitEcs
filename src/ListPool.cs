@@ -3,21 +3,21 @@ using System.Collections.Generic;
 
 namespace RelEcs
 {
-    public static class ListPool<T>
+    public static class MaskPool
     {
-        static readonly Stack<List<T>> Stack = new();
+        static readonly Stack<Mask> Stack = new();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static List<T> Get()
+        public static Mask Get()
         {
-            return Stack.Count > 0 ? Stack.Pop() : new List<T>();
+            return Stack.Count > 0 ? Stack.Pop() : new Mask();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Add(List<T> list)
+        public static void Add(Mask mask)
         {
-            list.Clear();
-            Stack.Push(list);
+            mask.Clear();
+            Stack.Push(mask);
         }
     }
 }

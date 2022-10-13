@@ -7,18 +7,18 @@ namespace RelEcs
 {
     public class Query
     {
-        public readonly List<Table> Tables;
+        public readonly List<Identity> Identities;
 
-        internal readonly Archetypes Archetypes;
+        internal readonly Entities Entities;
         internal readonly Mask Mask;
 
-        protected readonly Dictionary<int, Array[]> Storages = new();
+        protected IStorage[] Storages = Array.Empty<IStorage>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Query(Archetypes archetypes, Mask mask, List<Table> tables)
+        public Query(Entities entities, Mask mask, List<Identity> identities)
         {
-            Tables = tables;
-            Archetypes = archetypes;
+            Identities = identities;
+            Entities = entities;
             Mask = mask;
 
             UpdateStorages();
@@ -27,19 +27,23 @@ namespace RelEcs
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Has(Entity entity)
         {
-            var meta = Archetypes.GetEntityMeta(entity.Identity);
-            return Storages.ContainsKey(meta.TableId);
+            return Identities.Contains(entity.Identity);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void AddTable(Table table)
+        internal void AddIdentity(Identity identity)
         {
-            Tables.Add(table);
-            UpdateStorages();
+            Identities.Add(identity);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected virtual Array[] GetStorages(Table table)
+        internal void RemoveIdentity(Identity identity)
+        {
+            Identities.Remove(identity);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected virtual IStorage[] GetStorages()
         {
             throw new Exception("Invalid Enumerator");
         }
@@ -47,62 +51,34 @@ namespace RelEcs
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void UpdateStorages()
         {
-            Storages.Clear();
-
-            foreach (var table in Tables)
-            {
-                var storages = GetStorages(table);
-                Storages.Add(table.Id, storages);
-            }
-        }
-    }
-
-    public class TriggerQuery<C> : Query
-        where C : class
-    {
-        readonly Type _systemType;
-
-        public TriggerQuery(Archetypes archetypes, Mask mask, List<Table> tables, Type systemType) : base(archetypes, mask, tables)
-        {
-            _systemType = systemType;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override Array[] GetStorages(Table table)
-        {
-            return new Array[] { table.GetStorage<Trigger<C>>(Identity.None) };
-        }
-
-        public TriggerEnumerator<C> GetEnumerator()
-        {
-            return new TriggerEnumerator<C>(Tables, _systemType);
+            Storages = GetStorages();
         }
     }
 
     public class Query<C> : Query
         where C : class
     {
-        public Query(Archetypes archetypes, Mask mask, List<Table> tables) : base(archetypes, mask, tables)
+        public Query(Entities entities, Mask mask, List<Identity> identities) : base(entities, mask, identities)
         {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override Array[] GetStorages(Table table)
+        protected override IStorage[] GetStorages()
         {
-            return new Array[] { table.GetStorage<C>(Identity.None) };
+            return new[] { Entities.GetStorage<C>() };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public C Get(Entity entity)
         {
-            var meta = Archetypes.GetEntityMeta(entity.Identity);
-            var storage = (C[])Storages[meta.TableId][0];
-            return storage[meta.Row];
+            var meta = Entities.GetEntityMeta(entity.Identity);
+            var storage = (Storage<C>)Storages[0];
+            return storage.Get(meta.Identity.Number);
         }
 
         public Enumerator<C> GetEnumerator()
         {
-            return new Enumerator<C>(Archetypes, Tables);
+            return new Enumerator<C>(Entities, Identities, Storages);
         }
     }
 
@@ -110,33 +86,32 @@ namespace RelEcs
         where C1 : class
         where C2 : class
     {
-        public Query(Archetypes archetypes, Mask mask, List<Table> tables) : base(archetypes, mask, tables)
+        public Query(Entities entities, Mask mask, List<Identity> identities) : base(entities, mask, identities)
         {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override Array[] GetStorages(Table table)
+        protected override IStorage[] GetStorages()
         {
-            return new Array[]
+            return new IStorage[]
             {
-                table.GetStorage<C1>(Identity.None),
-                table.GetStorage<C2>(Identity.None),
+                Entities.GetStorage<C1>(),
+                Entities.GetStorage<C2>(),
             };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (C1, C2) Get(Entity entity)
         {
-            var meta = Archetypes.GetEntityMeta(entity.Identity);
-            var storages = Storages[meta.TableId];
-            var storage1 = (C1[])storages[0];
-            var storage2 = (C2[])storages[1];
-            return (storage1[meta.Row], storage2[meta.Row]);
+            var meta = Entities.GetEntityMeta(entity.Identity);
+            var storage1 = (Storage<C1>)Storages[0];
+            var storage2 = (Storage<C2>)Storages[1];
+            return (storage1.Get(meta.Identity.Number), storage2.Get(meta.Identity.Number));
         }
 
         public Enumerator<C1, C2> GetEnumerator()
         {
-            return new Enumerator<C1, C2>(Archetypes, Tables);
+            return new Enumerator<C1, C2>(Entities, Identities, Storages);
         }
     }
 
@@ -145,35 +120,35 @@ namespace RelEcs
         where C2 : class
         where C3 : class
     {
-        public Query(Archetypes archetypes, Mask mask, List<Table> tables) : base(archetypes, mask, tables)
+        public Query(Entities entities, Mask mask, List<Identity> identities) : base(entities, mask, identities)
         {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override Array[] GetStorages(Table table)
+        protected override IStorage[] GetStorages()
         {
-            return new Array[]
+            return new IStorage[]
             {
-                table.GetStorage<C1>(Identity.None),
-                table.GetStorage<C2>(Identity.None),
-                table.GetStorage<C3>(Identity.None),
+                Entities.GetStorage<C1>(),
+                Entities.GetStorage<C2>(),
+                Entities.GetStorage<C3>(),
             };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (C1, C2, C3) Get(Entity entity)
         {
-            var meta = Archetypes.GetEntityMeta(entity.Identity);
-            var storages = Storages[meta.TableId];
-            var storage1 = (C1[])storages[0];
-            var storage2 = (C2[])storages[1];
-            var storage3 = (C3[])storages[2];
-            return (storage1[meta.Row], storage2[meta.Row], storage3[meta.Row]);
+            var meta = Entities.GetEntityMeta(entity.Identity);
+            var storage1 = (Storage<C1>)Storages[0];
+            var storage2 = (Storage<C2>)Storages[1];
+            var storage3 = (Storage<C3>)Storages[2];
+            return (storage1.Get(meta.Identity.Number), storage2.Get(meta.Identity.Number),
+                storage3.Get(meta.Identity.Number));
         }
 
         public Enumerator<C1, C2, C3> GetEnumerator()
         {
-            return new Enumerator<C1, C2, C3>(Archetypes, Tables);
+            return new Enumerator<C1, C2, C3>(Entities, Identities, Storages);
         }
     }
 
@@ -183,37 +158,38 @@ namespace RelEcs
         where C3 : class
         where C4 : class
     {
-        public Query(Archetypes archetypes, Mask mask, List<Table> tables) : base(archetypes, mask, tables)
+        public Query(Entities entities, Mask mask, List<Identity> identities) : base(entities, mask, identities)
         {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override Array[] GetStorages(Table table)
+        protected override IStorage[] GetStorages()
         {
-            return new Array[]
+            return new IStorage[]
             {
-                table.GetStorage<C1>(Identity.None),
-                table.GetStorage<C2>(Identity.None),
-                table.GetStorage<C3>(Identity.None),
-                table.GetStorage<C4>(Identity.None),
+                Entities.GetStorage<C1>(),
+                Entities.GetStorage<C2>(),
+                Entities.GetStorage<C3>(),
+                Entities.GetStorage<C4>(),
             };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (C1, C2, C3, C4) Get(Entity entity)
         {
-            var meta = Archetypes.GetEntityMeta(entity.Identity);
-            var storages = Storages[meta.TableId];
-            var storage1 = (C1[])storages[0];
-            var storage2 = (C2[])storages[1];
-            var storage3 = (C3[])storages[2];
-            var storage4 = (C4[])storages[3];
-            return (storage1[meta.Row], storage2[meta.Row], storage3[meta.Row], storage4[meta.Row]);
+            var meta = Entities.GetEntityMeta(entity.Identity);
+            var storage1 = (Storage<C1>)Storages[0];
+            var storage2 = (Storage<C2>)Storages[1];
+            var storage3 = (Storage<C3>)Storages[2];
+            var storage4 = (Storage<C4>)Storages[3];
+            return (storage1.Get(meta.Identity.Number), storage2.Get(meta.Identity.Number),
+                storage3.Get(meta.Identity.Number),
+                storage4.Get(meta.Identity.Number));
         }
 
         public Enumerator<C1, C2, C3, C4> GetEnumerator()
         {
-            return new Enumerator<C1, C2, C3, C4>(Archetypes, Tables);
+            return new Enumerator<C1, C2, C3, C4>(Entities, Identities, Storages);
         }
     }
 
@@ -224,39 +200,40 @@ namespace RelEcs
         where C4 : class
         where C5 : class
     {
-        public Query(Archetypes archetypes, Mask mask, List<Table> tables) : base(archetypes, mask, tables)
+        public Query(Entities entities, Mask mask, List<Identity> identities) : base(entities, mask, identities)
         {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override Array[] GetStorages(Table table)
+        protected override IStorage[] GetStorages()
         {
-            return new Array[]
+            return new IStorage[]
             {
-                table.GetStorage<C1>(Identity.None),
-                table.GetStorage<C2>(Identity.None),
-                table.GetStorage<C3>(Identity.None),
-                table.GetStorage<C4>(Identity.None),
-                table.GetStorage<C5>(Identity.None),
+                Entities.GetStorage<C1>(),
+                Entities.GetStorage<C2>(),
+                Entities.GetStorage<C3>(),
+                Entities.GetStorage<C4>(),
+                Entities.GetStorage<C5>(),
             };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (C1, C2, C3, C4, C5) Get(Entity entity)
         {
-            var meta = Archetypes.GetEntityMeta(entity.Identity);
-            var storages = Storages[meta.TableId];
-            var storage1 = (C1[])storages[0];
-            var storage2 = (C2[])storages[1];
-            var storage3 = (C3[])storages[2];
-            var storage4 = (C4[])storages[3];
-            var storage5 = (C5[])storages[4];
-            return (storage1[meta.Row], storage2[meta.Row], storage3[meta.Row], storage4[meta.Row], storage5[meta.Row]);
+            var meta = Entities.GetEntityMeta(entity.Identity);
+            var storage1 = (Storage<C1>)Storages[0];
+            var storage2 = (Storage<C2>)Storages[1];
+            var storage3 = (Storage<C3>)Storages[2];
+            var storage4 = (Storage<C4>)Storages[3];
+            var storage5 = (Storage<C5>)Storages[4];
+            return (storage1.Get(meta.Identity.Number), storage2.Get(meta.Identity.Number),
+                storage3.Get(meta.Identity.Number),
+                storage4.Get(meta.Identity.Number), storage5.Get(meta.Identity.Number));
         }
 
         public Enumerator<C1, C2, C3, C4, C5> GetEnumerator()
         {
-            return new Enumerator<C1, C2, C3, C4, C5>(Archetypes, Tables);
+            return new Enumerator<C1, C2, C3, C4, C5>(Entities, Identities, Storages);
         }
     }
 
@@ -268,42 +245,43 @@ namespace RelEcs
         where C5 : class
         where C6 : class
     {
-        public Query(Archetypes archetypes, Mask mask, List<Table> tables) : base(archetypes, mask, tables)
+        public Query(Entities entities, Mask mask, List<Identity> identities) : base(entities, mask, identities)
         {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override Array[] GetStorages(Table table)
+        protected override IStorage[] GetStorages()
         {
-            return new Array[]
+            return new IStorage[]
             {
-                table.GetStorage<C1>(Identity.None),
-                table.GetStorage<C2>(Identity.None),
-                table.GetStorage<C3>(Identity.None),
-                table.GetStorage<C4>(Identity.None),
-                table.GetStorage<C5>(Identity.None),
-                table.GetStorage<C6>(Identity.None),
+                Entities.GetStorage<C2>(),
+                Entities.GetStorage<C1>(),
+                Entities.GetStorage<C3>(),
+                Entities.GetStorage<C4>(),
+                Entities.GetStorage<C5>(),
+                Entities.GetStorage<C6>(),
             };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (C1, C2, C3, C4, C5, C6) Get(Entity entity)
         {
-            var meta = Archetypes.GetEntityMeta(entity.Identity);
-            var storages = Storages[meta.TableId];
-            var storage1 = (C1[])storages[0];
-            var storage2 = (C2[])storages[1];
-            var storage3 = (C3[])storages[2];
-            var storage4 = (C4[])storages[3];
-            var storage5 = (C5[])storages[4];
-            var storage6 = (C6[])storages[5];
-            return (storage1[meta.Row], storage2[meta.Row], storage3[meta.Row], storage4[meta.Row], storage5[meta.Row],
-                storage6[meta.Row]);
+            var meta = Entities.GetEntityMeta(entity.Identity);
+            var storage1 = (Storage<C1>)Storages[0];
+            var storage2 = (Storage<C2>)Storages[1];
+            var storage3 = (Storage<C3>)Storages[2];
+            var storage4 = (Storage<C4>)Storages[3];
+            var storage5 = (Storage<C5>)Storages[4];
+            var storage6 = (Storage<C6>)Storages[5];
+            return (storage1.Get(meta.Identity.Number), storage2.Get(meta.Identity.Number),
+                storage3.Get(meta.Identity.Number),
+                storage4.Get(meta.Identity.Number), storage5.Get(meta.Identity.Number),
+                storage6.Get(meta.Identity.Number));
         }
 
         public Enumerator<C1, C2, C3, C4, C5, C6> GetEnumerator()
         {
-            return new Enumerator<C1, C2, C3, C4, C5, C6>(Archetypes, Tables);
+            return new Enumerator<C1, C2, C3, C4, C5, C6>(Entities, Identities, Storages);
         }
     }
 
@@ -316,44 +294,46 @@ namespace RelEcs
         where C6 : class
         where C7 : class
     {
-        public Query(Archetypes archetypes, Mask mask, List<Table> tables) : base(archetypes, mask, tables)
+        public Query(Entities entities, Mask mask, List<Identity> identities) : base(entities, mask, identities)
         {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override Array[] GetStorages(Table table)
+        protected override IStorage[] GetStorages()
         {
-            return new Array[]
+            return new IStorage[]
             {
-                table.GetStorage<C1>(Identity.None),
-                table.GetStorage<C2>(Identity.None),
-                table.GetStorage<C3>(Identity.None),
-                table.GetStorage<C4>(Identity.None),
-                table.GetStorage<C5>(Identity.None),
-                table.GetStorage<C6>(Identity.None),
-                table.GetStorage<C7>(Identity.None),
+                Entities.GetStorage<C1>(),
+                Entities.GetStorage<C2>(),
+                Entities.GetStorage<C3>(),
+                Entities.GetStorage<C4>(),
+                Entities.GetStorage<C5>(),
+                Entities.GetStorage<C6>(),
+                Entities.GetStorage<C7>(),
             };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (C1, C2, C3, C4, C5, C6, C7) Get(Entity entity)
         {
-            var meta = Archetypes.GetEntityMeta(entity.Identity);
-            var storages = Storages[meta.TableId];
-            var storage1 = (C1[])storages[0];
-            var storage2 = (C2[])storages[1];
-            var storage3 = (C3[])storages[2];
-            var storage4 = (C4[])storages[3];
-            var storage5 = (C5[])storages[4];
-            var storage6 = (C6[])storages[5];
-            var storage7 = (C7[])storages[6];
-            return (storage1[meta.Row], storage2[meta.Row], storage3[meta.Row], storage4[meta.Row], storage5[meta.Row],
-                storage6[meta.Row], storage7[meta.Row]);
+            var meta = Entities.GetEntityMeta(entity.Identity);
+            var storage1 = (Storage<C1>)Storages[0];
+            var storage2 = (Storage<C2>)Storages[1];
+            var storage3 = (Storage<C3>)Storages[2];
+            var storage4 = (Storage<C4>)Storages[3];
+            var storage5 = (Storage<C5>)Storages[4];
+            var storage6 = (Storage<C6>)Storages[5];
+            var storage7 = (Storage<C7>)Storages[6];
+            return (storage1.Get(meta.Identity.Number), storage2.Get(meta.Identity.Number),
+                storage3.Get(meta.Identity.Number),
+                storage4.Get(meta.Identity.Number), storage5.Get(meta.Identity.Number),
+                storage6.Get(meta.Identity.Number),
+                storage7.Get(meta.Identity.Number));
         }
 
         public Enumerator<C1, C2, C3, C4, C5, C6, C7> GetEnumerator()
         {
-            return new Enumerator<C1, C2, C3, C4, C5, C6, C7>(Archetypes, Tables);
+            return new Enumerator<C1, C2, C3, C4, C5, C6, C7>(Entities, Identities, Storages);
         }
     }
 
@@ -367,46 +347,48 @@ namespace RelEcs
         where C7 : class
         where C8 : class
     {
-        public Query(Archetypes archetypes, Mask mask, List<Table> tables) : base(archetypes, mask, tables)
+        public Query(Entities entities, Mask mask, List<Identity> identities) : base(entities, mask, identities)
         {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override Array[] GetStorages(Table table)
+        protected override IStorage[] GetStorages()
         {
-            return new Array[]
+            return new IStorage[]
             {
-                table.GetStorage<C1>(Identity.None),
-                table.GetStorage<C2>(Identity.None),
-                table.GetStorage<C3>(Identity.None),
-                table.GetStorage<C4>(Identity.None),
-                table.GetStorage<C5>(Identity.None),
-                table.GetStorage<C6>(Identity.None),
-                table.GetStorage<C7>(Identity.None),
-                table.GetStorage<C8>(Identity.None),
+                Entities.GetStorage<C1>(),
+                Entities.GetStorage<C2>(),
+                Entities.GetStorage<C3>(),
+                Entities.GetStorage<C4>(),
+                Entities.GetStorage<C5>(),
+                Entities.GetStorage<C6>(),
+                Entities.GetStorage<C7>(),
+                Entities.GetStorage<C8>(),
             };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (C1, C2, C3, C4, C5, C6, C7, C8) Get(Entity entity)
         {
-            var meta = Archetypes.GetEntityMeta(entity.Identity);
-            var storages = Storages[meta.TableId];
-            var storage1 = (C1[])storages[0];
-            var storage2 = (C2[])storages[1];
-            var storage3 = (C3[])storages[2];
-            var storage4 = (C4[])storages[3];
-            var storage5 = (C5[])storages[4];
-            var storage6 = (C6[])storages[5];
-            var storage7 = (C7[])storages[6];
-            var storage8 = (C8[])storages[7];
-            return (storage1[meta.Row], storage2[meta.Row], storage3[meta.Row], storage4[meta.Row], storage5[meta.Row],
-                storage6[meta.Row], storage7[meta.Row], storage8[meta.Row]);
+            var meta = Entities.GetEntityMeta(entity.Identity);
+            var storage1 = (Storage<C1>)Storages[0];
+            var storage2 = (Storage<C2>)Storages[1];
+            var storage3 = (Storage<C3>)Storages[2];
+            var storage4 = (Storage<C4>)Storages[3];
+            var storage5 = (Storage<C5>)Storages[4];
+            var storage6 = (Storage<C6>)Storages[5];
+            var storage7 = (Storage<C7>)Storages[6];
+            var storage8 = (Storage<C8>)Storages[7];
+            return (storage1.Get(meta.Identity.Number), storage2.Get(meta.Identity.Number),
+                storage3.Get(meta.Identity.Number),
+                storage4.Get(meta.Identity.Number), storage5.Get(meta.Identity.Number),
+                storage6.Get(meta.Identity.Number),
+                storage7.Get(meta.Identity.Number), storage8.Get(meta.Identity.Number));
         }
 
         public Enumerator<C1, C2, C3, C4, C5, C6, C7, C8> GetEnumerator()
         {
-            return new Enumerator<C1, C2, C3, C4, C5, C6, C7, C8>(Archetypes, Tables);
+            return new Enumerator<C1, C2, C3, C4, C5, C6, C7, C8>(Entities, Identities, Storages);
         }
     }
 
@@ -421,67 +403,72 @@ namespace RelEcs
         where C8 : class
         where C9 : class
     {
-        public Query(Archetypes archetypes, Mask mask, List<Table> tables) : base(archetypes, mask, tables)
+        public Query(Entities entities, Mask mask, List<Identity> identities) : base(entities, mask, identities)
         {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override Array[] GetStorages(Table table)
+        protected override IStorage[] GetStorages()
         {
-            return new Array[]
+            return new IStorage[]
             {
-                table.GetStorage<C1>(Identity.None),
-                table.GetStorage<C2>(Identity.None),
-                table.GetStorage<C3>(Identity.None),
-                table.GetStorage<C4>(Identity.None),
-                table.GetStorage<C5>(Identity.None),
-                table.GetStorage<C6>(Identity.None),
-                table.GetStorage<C7>(Identity.None),
-                table.GetStorage<C8>(Identity.None),
-                table.GetStorage<C9>(Identity.None),
+                Entities.GetStorage<C1>(),
+                Entities.GetStorage<C2>(),
+                Entities.GetStorage<C3>(),
+                Entities.GetStorage<C4>(),
+                Entities.GetStorage<C5>(),
+                Entities.GetStorage<C6>(),
+                Entities.GetStorage<C7>(),
+                Entities.GetStorage<C8>(),
+                Entities.GetStorage<C9>(),
             };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (C1, C2, C3, C4, C5, C6, C7, C8, C9) Get(Entity entity)
         {
-            var meta = Archetypes.GetEntityMeta(entity.Identity);
-            var storages = Storages[meta.TableId];
-            var storage1 = (C1[])storages[0];
-            var storage2 = (C2[])storages[1];
-            var storage3 = (C3[])storages[2];
-            var storage4 = (C4[])storages[3];
-            var storage5 = (C5[])storages[4];
-            var storage6 = (C6[])storages[5];
-            var storage7 = (C7[])storages[6];
-            var storage8 = (C8[])storages[7];
-            var storage9 = (C9[])storages[8];
-            return (storage1[meta.Row], storage2[meta.Row], storage3[meta.Row], storage4[meta.Row], storage5[meta.Row],
-                storage6[meta.Row], storage7[meta.Row], storage8[meta.Row], storage9[meta.Row]);
+            var meta = Entities.GetEntityMeta(entity.Identity);
+            var storage1 = (Storage<C1>)Storages[0];
+            var storage2 = (Storage<C2>)Storages[1];
+            var storage3 = (Storage<C3>)Storages[2];
+            var storage4 = (Storage<C4>)Storages[3];
+            var storage5 = (Storage<C5>)Storages[4];
+            var storage6 = (Storage<C6>)Storages[5];
+            var storage7 = (Storage<C7>)Storages[6];
+            var storage8 = (Storage<C8>)Storages[7];
+            var storage9 = (Storage<C9>)Storages[8];
+            return (storage1.Get(meta.Identity.Number), storage2.Get(meta.Identity.Number),
+                storage3.Get(meta.Identity.Number),
+                storage4.Get(meta.Identity.Number), storage5.Get(meta.Identity.Number),
+                storage6.Get(meta.Identity.Number),
+                storage7.Get(meta.Identity.Number), storage8.Get(meta.Identity.Number),
+                storage9.Get(meta.Identity.Number));
         }
 
         public Enumerator<C1, C2, C3, C4, C5, C6, C7, C8, C9> GetEnumerator()
         {
-            return new Enumerator<C1, C2, C3, C4, C5, C6, C7, C8, C9>(Archetypes, Tables);
+            return new Enumerator<C1, C2, C3, C4, C5, C6, C7, C8, C9>(Entities, Identities, Storages);
         }
     }
 
     public class Enumerator : IEnumerator, IDisposable
     {
-        protected readonly List<Table> Tables;
+        protected readonly List<Identity> Identities;
+        protected readonly IStorage[] Storages;
 
-        protected int TableIndex;
-        protected int EntityIndex;
+        protected int Index;
 
-        readonly Archetypes _archetypes;
+        readonly Entities _entities;
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected Enumerator(Archetypes archetypes, List<Table> tables)
+        protected Enumerator(Entities entities, List<Identity> identities, IStorage[] storages)
         {
-            _archetypes = archetypes;
-            Tables = tables;
+            _entities = entities;
+            Identities = identities;
+            Storages = storages;
 
-            _archetypes.Lock();
+            _entities.Lock();
 
             Reset();
         }
@@ -489,30 +476,13 @@ namespace RelEcs
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
         {
-            if (TableIndex == Tables.Count) return false;
-
-            if (++EntityIndex < Tables[TableIndex].Count) return true;
-
-            EntityIndex = 0;
-            TableIndex++;
-
-            while (TableIndex < Tables.Count && Tables[TableIndex].Count == 0)
-            {
-                TableIndex++;
-            }
-
-            UpdateStorage();
-
-            return TableIndex < Tables.Count && EntityIndex < Tables[TableIndex].Count;
+            return ++Index < Identities.Count;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Reset()
         {
-            TableIndex = 0;
-            EntityIndex = -1;
-
-            UpdateStorage();
+            Index = -1;
         }
 
         object IEnumerator.Current
@@ -524,417 +494,167 @@ namespace RelEcs
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Dispose()
         {
-            _archetypes.Unlock();
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected virtual void UpdateStorage()
-        {
-            throw new Exception("Invalid Enumerator");
-        }
-    }
-
-    public class TriggerEnumerator : IEnumerator, IDisposable
-    {
-        protected readonly List<Table> Tables;
-
-        protected int TableIndex;
-        protected int EntityIndex;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected TriggerEnumerator(List<Table> tables)
-        {
-            Tables = tables;
-            Reset();
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool MoveNext()
-        {
-            if (TableIndex == Tables.Count) return false;
-
-            if (++EntityIndex < Tables[TableIndex].Count) return true;
-
-            EntityIndex = 0;
-            TableIndex++;
-
-            while (TableIndex < Tables.Count && Tables[TableIndex].Count == 0)
-            {
-                TableIndex++;
-            }
-
-            UpdateStorage();
-
-            return TableIndex < Tables.Count && EntityIndex < Tables[TableIndex].Count;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Reset()
-        {
-            TableIndex = 0;
-            EntityIndex = -1;
-
-            UpdateStorage();
-        }
-
-        object IEnumerator.Current
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => throw new Exception("Invalid Enumerator");
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Dispose()
-        {
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected virtual void UpdateStorage()
-        {
-            throw new Exception("Invalid Enumerator");
-        }
-    }
-
-    public class TriggerEnumerator<C> : TriggerEnumerator
-    {
-        Trigger<C>[] _storage;
-        SystemList[] _systemLists;
-        readonly Type _systemType;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TriggerEnumerator(List<Table> tables, Type systemType) : base(tables)
-        {
-            _systemType = systemType;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public new bool MoveNext()
-        {
-            if (TableIndex == Tables.Count) return false;
-
-            EntityIndex++;
-
-            while (Tables[TableIndex].Count > EntityIndex && _systemLists[EntityIndex].List.Contains(_systemType))
-            {
-                EntityIndex++;
-            }
-
-            if (EntityIndex < Tables[TableIndex].Count) return true;
-
-            EntityIndex = 0;
-            TableIndex++;
-
-            while (TableIndex < Tables.Count && Tables[TableIndex].Count == 0)
-            {
-                TableIndex++;
-            }
-
-            UpdateStorage();
-
-            return TableIndex < Tables.Count && EntityIndex < Tables[TableIndex].Count;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override void UpdateStorage()
-        {
-            if (TableIndex == Tables.Count) return;
-            _storage = Tables[TableIndex].GetStorage<Trigger<C>>(Identity.None);
-            _systemLists = Tables[TableIndex].GetStorage<SystemList>(Identity.None);
-        }
-
-        public C Current
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                _systemLists[EntityIndex].List.Add(_systemType);
-                return _storage[EntityIndex].Value;
-            }
+            _entities.Unlock();
         }
     }
 
     public class Enumerator<C> : Enumerator
     {
-        C[] _storage;
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
+        public Enumerator(Entities entities, List<Identity> identities, IStorage[] storages) : base(entities,
+            identities,
+            storages)
         {
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override void UpdateStorage()
-        {
-            if (TableIndex == Tables.Count) return;
-            _storage = Tables[TableIndex].GetStorage<C>(Identity.None);
         }
 
         public C Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => _storage[EntityIndex];
+            get => (C)Storages[0].GetRaw(Identities[Index].Number);
         }
     }
 
     public class Enumerator<C1, C2> : Enumerator
     {
-        C1[] _storage1;
-        C2[] _storage2;
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
+        public Enumerator(Entities entities, List<Identity> identities, IStorage[] storages) : base(entities,
+            identities,
+            storages)
         {
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override void UpdateStorage()
-        {
-            if (TableIndex == Tables.Count) return;
-            _storage1 = Tables[TableIndex].GetStorage<C1>(Identity.None);
-            _storage2 = Tables[TableIndex].GetStorage<C2>(Identity.None);
         }
 
         public (C1, C2) Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (_storage1[EntityIndex], _storage2[EntityIndex]);
+            get => ((C1)Storages[0].GetRaw(Identities[Index].Number), (C2)Storages[1].GetRaw(Identities[Index].Number));
         }
     }
 
     public class Enumerator<C1, C2, C3> : Enumerator
     {
-        C1[] _storage1;
-        C2[] _storage2;
-        C3[] _storage3;
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
+        public Enumerator(Entities entities, List<Identity> identities, IStorage[] storages) : base(entities,
+            identities,
+            storages)
         {
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override void UpdateStorage()
-        {
-            if (TableIndex == Tables.Count) return;
-            _storage1 = Tables[TableIndex].GetStorage<C1>(Identity.None);
-            _storage2 = Tables[TableIndex].GetStorage<C2>(Identity.None);
-            _storage3 = Tables[TableIndex].GetStorage<C3>(Identity.None);
         }
 
         public (C1, C2, C3) Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (_storage1[EntityIndex], _storage2[EntityIndex], _storage3[EntityIndex]);
+            get => ((C1)Storages[0].GetRaw(Identities[Index].Number), (C2)Storages[1].GetRaw(Identities[Index].Number),
+                (C3)Storages[2].GetRaw(Identities[Index].Number));
         }
     }
 
     public class Enumerator<C1, C2, C3, C4> : Enumerator
     {
-        C1[] _storage1;
-        C2[] _storage2;
-        C3[] _storage3;
-        C4[] _storage4;
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
+        public Enumerator(Entities entities, List<Identity> identities, IStorage[] storages) : base(entities,
+            identities,
+            storages)
         {
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override void UpdateStorage()
-        {
-            if (TableIndex == Tables.Count) return;
-            _storage1 = Tables[TableIndex].GetStorage<C1>(Identity.None);
-            _storage2 = Tables[TableIndex].GetStorage<C2>(Identity.None);
-            _storage3 = Tables[TableIndex].GetStorage<C3>(Identity.None);
-            _storage4 = Tables[TableIndex].GetStorage<C4>(Identity.None);
         }
 
         public (C1, C2, C3, C4) Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (_storage1[EntityIndex], _storage2[EntityIndex], _storage3[EntityIndex], _storage4[EntityIndex]);
+            get => ((C1)Storages[0].GetRaw(Identities[Index].Number), (C2)Storages[1].GetRaw(Identities[Index].Number),
+                (C3)Storages[2].GetRaw(Identities[Index].Number), (C4)Storages[3].GetRaw(Identities[Index].Number));
         }
     }
 
     public class Enumerator<C1, C2, C3, C4, C5> : Enumerator
     {
-        C1[] _storage1;
-        C2[] _storage2;
-        C3[] _storage3;
-        C4[] _storage4;
-        C5[] _storage5;
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
+        public Enumerator(Entities entities, List<Identity> identities, IStorage[] storages) : base(entities,
+            identities,
+            storages)
         {
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override void UpdateStorage()
-        {
-            if (TableIndex == Tables.Count) return;
-            _storage1 = Tables[TableIndex].GetStorage<C1>(Identity.None);
-            _storage2 = Tables[TableIndex].GetStorage<C2>(Identity.None);
-            _storage3 = Tables[TableIndex].GetStorage<C3>(Identity.None);
-            _storage4 = Tables[TableIndex].GetStorage<C4>(Identity.None);
-            _storage5 = Tables[TableIndex].GetStorage<C5>(Identity.None);
         }
 
         public (C1, C2, C3, C4, C5) Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (_storage1[EntityIndex], _storage2[EntityIndex], _storage3[EntityIndex], _storage4[EntityIndex],
-                _storage5[EntityIndex]);
+            get => ((C1)Storages[0].GetRaw(Identities[Index].Number), (C2)Storages[1].GetRaw(Identities[Index].Number),
+                (C3)Storages[2].GetRaw(Identities[Index].Number), (C4)Storages[3].GetRaw(Identities[Index].Number),
+                (C5)Storages[4].GetRaw(Identities[Index].Number));
         }
     }
 
     public class Enumerator<C1, C2, C3, C4, C5, C6> : Enumerator
     {
-        C1[] _storage1;
-        C2[] _storage2;
-        C3[] _storage3;
-        C4[] _storage4;
-        C5[] _storage5;
-        C6[] _storage6;
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
+        public Enumerator(Entities entities, List<Identity> identities, IStorage[] storages) : base(entities,
+            identities,
+            storages)
         {
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override void UpdateStorage()
-        {
-            if (TableIndex == Tables.Count) return;
-            _storage1 = Tables[TableIndex].GetStorage<C1>(Identity.None);
-            _storage2 = Tables[TableIndex].GetStorage<C2>(Identity.None);
-            _storage3 = Tables[TableIndex].GetStorage<C3>(Identity.None);
-            _storage4 = Tables[TableIndex].GetStorage<C4>(Identity.None);
-            _storage5 = Tables[TableIndex].GetStorage<C5>(Identity.None);
-            _storage6 = Tables[TableIndex].GetStorage<C6>(Identity.None);
         }
 
         public (C1, C2, C3, C4, C5, C6) Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (_storage1[EntityIndex], _storage2[EntityIndex], _storage3[EntityIndex], _storage4[EntityIndex],
-                _storage5[EntityIndex], _storage6[EntityIndex]);
+            get => ((C1)Storages[0].GetRaw(Identities[Index].Number), (C2)Storages[1].GetRaw(Identities[Index].Number),
+                (C3)Storages[2].GetRaw(Identities[Index].Number), (C4)Storages[3].GetRaw(Identities[Index].Number),
+                (C5)Storages[4].GetRaw(Identities[Index].Number), (C6)Storages[5].GetRaw(Identities[Index].Number));
         }
     }
 
     public class Enumerator<C1, C2, C3, C4, C5, C6, C7> : Enumerator
     {
-        C1[] _storage1;
-        C2[] _storage2;
-        C3[] _storage3;
-        C4[] _storage4;
-        C5[] _storage5;
-        C6[] _storage6;
-        C7[] _storage7;
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
+        public Enumerator(Entities entities, List<Identity> identities, IStorage[] storages) : base(entities,
+            identities,
+            storages)
         {
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override void UpdateStorage()
-        {
-            if (TableIndex == Tables.Count) return;
-            _storage1 = Tables[TableIndex].GetStorage<C1>(Identity.None);
-            _storage2 = Tables[TableIndex].GetStorage<C2>(Identity.None);
-            _storage3 = Tables[TableIndex].GetStorage<C3>(Identity.None);
-            _storage4 = Tables[TableIndex].GetStorage<C4>(Identity.None);
-            _storage5 = Tables[TableIndex].GetStorage<C5>(Identity.None);
-            _storage6 = Tables[TableIndex].GetStorage<C6>(Identity.None);
-            _storage7 = Tables[TableIndex].GetStorage<C7>(Identity.None);
         }
 
         public (C1, C2, C3, C4, C5, C6, C7) Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (_storage1[EntityIndex], _storage2[EntityIndex], _storage3[EntityIndex], _storage4[EntityIndex],
-                _storage5[EntityIndex], _storage6[EntityIndex], _storage7[EntityIndex]);
+            get => ((C1)Storages[0].GetRaw(Identities[Index].Number), (C2)Storages[1].GetRaw(Identities[Index].Number),
+                (C3)Storages[2].GetRaw(Identities[Index].Number), (C4)Storages[3].GetRaw(Identities[Index].Number),
+                (C5)Storages[4].GetRaw(Identities[Index].Number), (C6)Storages[5].GetRaw(Identities[Index].Number),
+                (C7)Storages[6].GetRaw(Identities[Index].Number));
         }
     }
 
     public class Enumerator<C1, C2, C3, C4, C5, C6, C7, C8> : Enumerator
     {
-        C1[] _storage1;
-        C2[] _storage2;
-        C3[] _storage3;
-        C4[] _storage4;
-        C5[] _storage5;
-        C6[] _storage6;
-        C7[] _storage7;
-        C8[] _storage8;
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
+        public Enumerator(Entities entities, List<Identity> identities, IStorage[] storages) : base(entities,
+            identities,
+            storages)
         {
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override void UpdateStorage()
-        {
-            if (TableIndex == Tables.Count) return;
-            _storage1 = Tables[TableIndex].GetStorage<C1>(Identity.None);
-            _storage2 = Tables[TableIndex].GetStorage<C2>(Identity.None);
-            _storage3 = Tables[TableIndex].GetStorage<C3>(Identity.None);
-            _storage4 = Tables[TableIndex].GetStorage<C4>(Identity.None);
-            _storage5 = Tables[TableIndex].GetStorage<C5>(Identity.None);
-            _storage6 = Tables[TableIndex].GetStorage<C6>(Identity.None);
-            _storage7 = Tables[TableIndex].GetStorage<C7>(Identity.None);
-            _storage8 = Tables[TableIndex].GetStorage<C8>(Identity.None);
         }
 
         public (C1, C2, C3, C4, C5, C6, C7, C8) Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (_storage1[EntityIndex], _storage2[EntityIndex], _storage3[EntityIndex], _storage4[EntityIndex],
-                _storage5[EntityIndex], _storage6[EntityIndex], _storage7[EntityIndex], _storage8[EntityIndex]);
+            get => ((C1)Storages[0].GetRaw(Identities[Index].Number), (C2)Storages[1].GetRaw(Identities[Index].Number),
+                (C3)Storages[2].GetRaw(Identities[Index].Number), (C4)Storages[3].GetRaw(Identities[Index].Number),
+                (C5)Storages[4].GetRaw(Identities[Index].Number), (C6)Storages[5].GetRaw(Identities[Index].Number),
+                (C7)Storages[6].GetRaw(Identities[Index].Number), (C8)Storages[7].GetRaw(Identities[Index].Number));
         }
     }
 
     public class Enumerator<C1, C2, C3, C4, C5, C6, C7, C8, C9> : Enumerator
     {
-        C1[] _storage1;
-        C2[] _storage2;
-        C3[] _storage3;
-        C4[] _storage4;
-        C5[] _storage5;
-        C6[] _storage6;
-        C7[] _storage7;
-        C8[] _storage8;
-        C9[] _storage9;
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
+        public Enumerator(Entities entities, List<Identity> identities, IStorage[] storages) : base(entities,
+            identities,
+            storages)
         {
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override void UpdateStorage()
-        {
-            if (TableIndex == Tables.Count) return;
-            _storage1 = Tables[TableIndex].GetStorage<C1>(Identity.None);
-            _storage2 = Tables[TableIndex].GetStorage<C2>(Identity.None);
-            _storage3 = Tables[TableIndex].GetStorage<C3>(Identity.None);
-            _storage4 = Tables[TableIndex].GetStorage<C4>(Identity.None);
-            _storage5 = Tables[TableIndex].GetStorage<C5>(Identity.None);
-            _storage6 = Tables[TableIndex].GetStorage<C6>(Identity.None);
-            _storage7 = Tables[TableIndex].GetStorage<C7>(Identity.None);
-            _storage8 = Tables[TableIndex].GetStorage<C8>(Identity.None);
-            _storage9 = Tables[TableIndex].GetStorage<C9>(Identity.None);
         }
 
         public (C1, C2, C3, C4, C5, C6, C7, C8, C9) Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (_storage1[EntityIndex], _storage2[EntityIndex], _storage3[EntityIndex], _storage4[EntityIndex],
-                _storage5[EntityIndex], _storage6[EntityIndex], _storage7[EntityIndex], _storage8[EntityIndex],
-                _storage9[EntityIndex]);
+            get => ((C1)Storages[0].GetRaw(Identities[Index].Number), (C2)Storages[1].GetRaw(Identities[Index].Number),
+                (C3)Storages[2].GetRaw(Identities[Index].Number), (C4)Storages[3].GetRaw(Identities[Index].Number),
+                (C5)Storages[4].GetRaw(Identities[Index].Number), (C6)Storages[5].GetRaw(Identities[Index].Number),
+                (C7)Storages[6].GetRaw(Identities[Index].Number), (C8)Storages[7].GetRaw(Identities[Index].Number),
+                (C9)Storages[8].GetRaw(Identities[Index].Number));
         }
     }
 }
