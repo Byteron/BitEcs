@@ -193,7 +193,36 @@ namespace RelEcs
             meta.Row = newRow;
             meta.TableId = newTable.Id;
         }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public NewQuery<Q, F> GetNewQuery<Q, F>(Mask mask)
+        {
+            var hash = mask.GetHashCode();
 
+            // if (Queries.TryGetValue(hash, out var query)) return query;
+
+            var matchingTables = new List<Table>();
+
+            var type = mask.HasTypes[0];
+            if (!TablesByType.TryGetValue(type, out var typeTables))
+            {
+                typeTables = new List<Table>();
+                TablesByType[type] = typeTables;
+            }
+
+            foreach (var table in typeTables)
+            {
+                if (!IsMaskCompatibleWith(mask, table)) continue;
+
+                matchingTables.Add(table);
+            }
+
+            var query = new NewQuery<Q, F>(this, mask.HasTypes.ToArray(), matchingTables);
+            // Queries.Add(hash, query);
+
+            return query;
+        }
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Query GetQuery(Mask mask, Func<Archetypes, Mask, List<Table>, Query> createQuery)
         {

@@ -248,41 +248,75 @@ namespace RelEcs
         public void Send<T>(T trigger) where T : class
         {
             if (trigger is null) throw new Exception("trigger cannot be null");
-
+        
             var entity = _archetypes.Spawn();
             _archetypes.AddComponent(StorageType.Create<SystemList>(Identity.None), entity.Identity, new SystemList());
             _archetypes.AddComponent(StorageType.Create<LifeTime>(Identity.None), entity.Identity, new LifeTime());
             _archetypes.AddComponent(StorageType.Create<Trigger<T>>(Identity.None), entity.Identity,
                 new Trigger<T> { Value = trigger });
         }
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TriggerQuery<T> Receive<T>(ISystem system) where T : class
         {
             var mask = new Mask();
-
+        
             mask.Has(StorageType.Create<Trigger<T>>(Identity.None));
             mask.Has(StorageType.Create<SystemList>(Identity.None));
-
+        
             var matchingTables = new List<Table>();
-
+        
             var type = mask.HasTypes[0];
             if (!_archetypes.TablesByType.TryGetValue(type, out var typeTables))
             {
                 typeTables = new List<Table>();
                 _archetypes.TablesByType[type] = typeTables;
             }
-
+        
             foreach (var table in typeTables)
             {
                 if (!_archetypes.IsMaskCompatibleWith(mask, table)) continue;
-
+        
                 matchingTables.Add(table);
             }
-
+        
             return new TriggerQuery<T>(_archetypes, mask, matchingTables, system.GetType());
         }
+        
+        public sealed class NoFilter { }
 
+        public NewQuery<Q, NoFilter> NewQuery<Q>()
+        {
+            return NewQuery<Q, NoFilter>();
+        }
+        
+        public NewQuery<Q, F> NewQuery<Q, F>()
+        {
+            var q = typeof(Q);
+            var types = new List<StorageType>();
+            
+            for (var i = 1; i <= 8; i++)
+            {
+                if (q.Name != $"ValueTuple`{i}") continue;
+                
+                foreach(var type in q.GetGenericArguments())
+                {
+                    types.Add(StorageType.CreateFromType(type, Identity.None));
+                }
+                
+                break;
+            }
+
+            var mask = new Mask();
+
+            foreach (var type in types)
+            {
+                mask.Has(type);
+            }
+            
+            return _archetypes.GetNewQuery<Q, F>(mask);
+        }
+        
         public Query<Entity> Query()
         {
             return new QueryBuilder<Entity>(_archetypes).Build();
