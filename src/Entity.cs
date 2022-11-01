@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace RelEcs
 {
-    public class Entity
+    public readonly struct Entity
     {
         public static readonly Entity None = new(Identity.None);
         public static readonly Entity Any = new(Identity.Any);
@@ -37,11 +37,10 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator ==(Entity left, Entity right) => left is not null && left.Equals(right);
+        public static bool operator ==(Entity left, Entity right) => left.Equals(right);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator !=(Entity left, Entity right) =>
-            (left is null && right is not null) || (left is not null && !left.Equals(right));
+        public static bool operator !=(Entity left, Entity right) => !left.Equals(right);
     }
 
     public readonly struct EntityBuilder
@@ -57,14 +56,14 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public EntityBuilder Add<T>(Entity target = default) where T : class
+        public EntityBuilder Add<T>(Entity target = default) where T : struct
         {
-            World.AddComponent<T>(_entity, target ?? Entity.None);
+            World.AddComponent<T>(_entity, target);
             return this;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public EntityBuilder Add<T>(Type type) where T : class
+        public EntityBuilder Add<T>(Type type) where T : struct
         {
             var typeEntity = World.GetTypeEntity(type);
             World.AddComponent<T>(_entity, typeEntity);
@@ -72,21 +71,21 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public EntityBuilder Add<T>(T data) where T : class
+        public EntityBuilder Add<T>(T data) where T : struct
         {
             World.AddComponent(_entity, data);
             return this;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public EntityBuilder Add<T>(T data, Entity target) where T : class
+        public EntityBuilder Add<T>(T data, Entity target) where T : struct
         {
             World.AddComponent(_entity, data, target);
             return this;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public EntityBuilder Add<T>(T data, Type type) where T : class
+        public EntityBuilder Add<T>(T data, Type type) where T : struct
         {
             var typeEntity = World.GetTypeEntity(type);
             World.AddComponent(_entity, data, typeEntity);
@@ -94,21 +93,21 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public EntityBuilder Remove<T>() where T : class
+        public EntityBuilder Remove<T>() where T : struct
         {
             World.RemoveComponent<T>(_entity);
             return this;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public EntityBuilder Remove<T>(Entity target) where T : class
+        public EntityBuilder Remove<T>(Entity target) where T : struct
         {
             World.RemoveComponent<T>(_entity, target);
             return this;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public EntityBuilder Remove<T>(Type type) where T : class
+        public EntityBuilder Remove<T>(Type type) where T : struct
         {
             var typeEntity = World.GetTypeEntity(type);
             World.RemoveComponent<T>(_entity, typeEntity);

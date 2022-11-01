@@ -1,9 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 
 namespace RelEcs
 {
+    public struct Element<T>
+    {
+        public T Value;
+    }
+    
     public sealed class World
     {
         static int worldCount;
@@ -46,48 +52,33 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void DespawnAllWith<T>() where T : class
+        public void DespawnAllWith<T>() where T : struct
         {
             var query = Query<Entity>().Has<T>().Build();
-            foreach (var entity in query) Despawn(entity);
+            foreach (var entity in query) Despawn(entity.Value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsAlive(Entity entity)
         {
-            return entity is not null && _archetypes.IsAlive(entity.Identity);
+            return _archetypes.IsAlive(entity.Identity);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T GetComponent<T>(Entity entity) where T : class
+        public ref T GetComponent<T>(Entity entity) where T : struct
         {
-            var type = StorageType.Create<T>(Identity.None);
-            return (T)_archetypes.GetComponent(type, entity.Identity);
+            return ref _archetypes.GetComponent<T>(entity.Identity, Identity.None);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryGetComponent<T>(Entity entity, out T component) where T : class
-        {
-            var type = StorageType.Create<T>(Identity.None);
-            if (!HasComponent<T>(entity))
-            {
-                component = null;
-                return false;
-            }
-
-            component = (T)_archetypes.GetComponent(type, entity.Identity);
-            return true;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool HasComponent<T>(Entity entity) where T : class
+        public bool HasComponent<T>(Entity entity) where T : struct
         {
             var type = StorageType.Create<T>(Identity.None);
             return _archetypes.HasComponent(type, entity.Identity);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AddComponent<T>(Entity entity) where T : class
+        public void AddComponent<T>(Entity entity) where T : struct
         {
             var type = StorageType.Create<T>(Identity.None);
             if (!type.IsTag) throw new Exception($"{type} is tag component, use Add(new Component()) instead");
@@ -95,7 +86,7 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AddComponent<T>(Entity entity, T component) where T : class
+        public void AddComponent<T>(Entity entity, T component) where T : struct
         {
             var type = StorageType.Create<T>(Identity.None);
             if (type.IsTag) throw new Exception($"{type} is tag component, Add<T>() instead");
@@ -103,7 +94,7 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void RemoveComponent<T>(Entity entity) where T : class
+        public void RemoveComponent<T>(Entity entity) where T : struct
         {
             var type = StorageType.Create<T>(Identity.None);
             _archetypes.RemoveComponent(type, entity.Identity);
@@ -116,35 +107,33 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T GetComponent<T>(Entity entity, Entity target) where T : class
+        public Ref<T> GetComponent<T>(Entity entity, Entity target) where T : struct
         {
-            var type = StorageType.Create<T>(target.Identity);
-            return (T)_archetypes.GetComponent(type, entity.Identity);
+            return new Ref<T>(ref _archetypes.GetComponent<T>(entity.Identity, target.Identity));
         }
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryGetComponent<T>(Entity entity, out T component, Entity target) where T : class
+        public bool TryGetComponent<T>(Entity entity, out Ref<T> component) where T : struct
         {
-            var type = StorageType.Create<T>(target.Identity);
             if (!HasComponent<T>(entity))
             {
-                component = null;
+                component = default;
                 return false;
             }
 
-            component = (T)_archetypes.GetComponent(type, entity.Identity);
+            component = new Ref<T>(ref _archetypes.GetComponent<T>(_world.Identity, Identity.None));
             return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool HasComponent<T>(Entity entity, Entity target) where T : class
+        public bool HasComponent<T>(Entity entity, Entity target) where T : struct
         {
             var type = StorageType.Create<T>(target.Identity);
             return _archetypes.HasComponent(type, entity.Identity);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AddComponent<T>(Entity entity, Entity target) where T : class
+        public void AddComponent<T>(Entity entity, Entity target) where T : struct
         {
             var type = StorageType.Create<T>(target.Identity);
             if (!type.IsTag) throw new Exception();
@@ -152,7 +141,7 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AddComponent<T>(Entity entity, T component, Entity target) where T : class
+        public void AddComponent<T>(Entity entity, T component, Entity target) where T : struct
         {
             var type = StorageType.Create<T>(target.Identity);
             if (type.IsTag) throw new Exception();
@@ -160,21 +149,21 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void RemoveComponent<T>(Entity entity, Entity target) where T : class
+        public void RemoveComponent<T>(Entity entity, Entity target) where T : struct
         {
             var type = StorageType.Create<T>(target.Identity);
             _archetypes.RemoveComponent(type, entity.Identity);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Entity GetTarget<T>(Entity entity) where T : class
+        public Entity GetTarget<T>(Entity entity) where T : struct
         {
             var type = StorageType.Create<T>(Identity.None);
             return _archetypes.GetTarget(type, entity.Identity);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public IEnumerable<Entity> GetTargets<T>(Entity entity) where T : class
+        public IEnumerable<Entity> GetTargets<T>(Entity entity) where T : struct
         {
             var type = StorageType.Create<T>(Identity.None);
             return _archetypes.GetTargets(type, entity.Identity);
@@ -183,72 +172,64 @@ namespace RelEcs
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T GetElement<T>() where T : class
         {
-            var type = StorageType.Create<T>(Identity.None);
-            return (T)_archetypes.GetComponent(type, _world.Identity);
+            return _archetypes.GetComponent<Element<T>>(_world.Identity, Identity.None).Value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetElement<T>(out T element) where T : class
         {
-            var type = StorageType.Create<T>(Identity.None);
             if (!HasElement<T>())
             {
                 element = null;
                 return false;
             }
 
-            element = (T)_archetypes.GetComponent(type, _world.Identity);
+            element = _archetypes.GetComponent<Element<T>>(_world.Identity, Identity.None).Value;
             return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool HasElement<T>() where T : class
         {
-            var type = StorageType.Create<T>(Identity.None);
+            var type = StorageType.Create<Element<T>>(Identity.None);
             return _archetypes.HasComponent(type, _world.Identity);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddElement<T>(T element) where T : class
         {
-            var type = StorageType.Create<T>(Identity.None);
-            if (type.IsTag) throw new Exception();
-            _archetypes.AddComponent(type, _world.Identity, element);
+            var type = StorageType.Create<Element<T>>(Identity.None);
+            _archetypes.AddComponent(type, _world.Identity, new Element<T> { Value = element });
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReplaceElement<T>(T element) where T : class
         {
-            var type = StorageType.Create<T>(Identity.None);
-            _archetypes.RemoveComponent(type, _world.Identity);
-            _archetypes.AddComponent(type, _world.Identity, element);
+            RemoveElement<T>();
+            AddElement(element);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddOrReplaceElement<T>(T element) where T : class
         {
-            var type = StorageType.Create<T>(Identity.None);
-
-            if (_archetypes.HasComponent(type, _world.Identity))
+            if (HasElement<T>())
             {
-                _archetypes.RemoveComponent(type, _world.Identity);
+                _archetypes.GetComponent<Element<T>>(_world.Identity, Identity.None).Value = element;
             }
 
-            _archetypes.AddComponent(type, _world.Identity, element);
+            AddElement(element);
         }
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void RemoveElement<T>() where T : class
         {
-            var type = StorageType.Create<T>(Identity.None);
+            var type = StorageType.Create<Element<T>>(Identity.None);
             _archetypes.RemoveComponent(type, _world.Identity);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Send<T>(T trigger) where T : class
+        public void Send<T>(T trigger) where T : struct
         {
-            if (trigger is null) throw new Exception("trigger cannot be null");
-
             var entity = _archetypes.Spawn();
             _archetypes.AddComponent(StorageType.Create<SystemList>(), entity.Identity, new SystemList());
             _archetypes.AddComponent(StorageType.Create<LifeTime>(), entity.Identity, new LifeTime());
@@ -259,7 +240,7 @@ namespace RelEcs
         readonly Dictionary<Type, Dictionary<int, Query>> _triggerQueries = new();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TriggerQuery<T> Receive<T>(ISystem system) where T : class
+        public TriggerQuery<T> Receive<T>(ISystem system) where T : struct
         {
             var mask = MaskPool.Get();
 
@@ -313,68 +294,68 @@ namespace RelEcs
             return new QueryBuilder<Entity>(_archetypes);
         }
 
-        public QueryBuilder<C> Query<C>() where C : class
+        public QueryBuilder<C> Query<C>() where C : struct
         {
             return new QueryBuilder<C>(_archetypes);
         }
 
-        public QueryBuilder<C1, C2> Query<C1, C2>() where C1 : class where C2 : class
+        public QueryBuilder<C1, C2> Query<C1, C2>() where C1 : struct where C2 : struct
         {
             return new QueryBuilder<C1, C2>(_archetypes);
         }
 
-        public QueryBuilder<C1, C2, C3> Query<C1, C2, C3>() where C1 : class where C2 : class where C3 : class
+        public QueryBuilder<C1, C2, C3> Query<C1, C2, C3>() where C1 : struct where C2 : struct where C3 : struct
         {
             return new QueryBuilder<C1, C2, C3>(_archetypes);
         }
 
-        public QueryBuilder<C1, C2, C3, C4> Query<C1, C2, C3, C4>() where C1 : class
-            where C2 : class
-            where C3 : class
-            where C4 : class
+        public QueryBuilder<C1, C2, C3, C4> Query<C1, C2, C3, C4>() where C1 : struct
+            where C2 : struct
+            where C3 : struct
+            where C4 : struct
         {
             return new QueryBuilder<C1, C2, C3, C4>(_archetypes);
         }
 
-        public QueryBuilder<C1, C2, C3, C4, C5> Query<C1, C2, C3, C4, C5>() where C1 : class
-            where C2 : class
-            where C3 : class
-            where C4 : class
-            where C5 : class
+        public QueryBuilder<C1, C2, C3, C4, C5> Query<C1, C2, C3, C4, C5>() where C1 : struct
+            where C2 : struct
+            where C3 : struct
+            where C4 : struct
+            where C5 : struct
         {
             return new QueryBuilder<C1, C2, C3, C4, C5>(_archetypes);
         }
 
-        public QueryBuilder<C1, C2, C3, C4, C5, C6> Query<C1, C2, C3, C4, C5, C6>() where C1 : class
-            where C2 : class
-            where C3 : class
-            where C4 : class
-            where C5 : class
-            where C6 : class
+        public QueryBuilder<C1, C2, C3, C4, C5, C6> Query<C1, C2, C3, C4, C5, C6>() where C1 : struct
+            where C2 : struct
+            where C3 : struct
+            where C4 : struct
+            where C5 : struct
+            where C6 : struct
         {
             return new QueryBuilder<C1, C2, C3, C4, C5, C6>(_archetypes);
         }
 
-        public QueryBuilder<C1, C2, C3, C4, C5, C6, C7> Query<C1, C2, C3, C4, C5, C6, C7>() where C1 : class
-            where C2 : class
-            where C3 : class
-            where C4 : class
-            where C5 : class
-            where C6 : class
-            where C7 : class
+        public QueryBuilder<C1, C2, C3, C4, C5, C6, C7> Query<C1, C2, C3, C4, C5, C6, C7>() where C1 : struct
+            where C2 : struct
+            where C3 : struct
+            where C4 : struct
+            where C5 : struct
+            where C6 : struct
+            where C7 : struct
         {
             return new QueryBuilder<C1, C2, C3, C4, C5, C6, C7>(_archetypes);
         }
 
         public QueryBuilder<C1, C2, C3, C4, C5, C6, C7, C8> Query<C1, C2, C3, C4, C5, C6, C7, C8>()
-            where C1 : class
-            where C2 : class
-            where C3 : class
-            where C4 : class
-            where C5 : class
-            where C6 : class
-            where C7 : class
-            where C8 : class
+            where C1 : struct
+            where C2 : struct
+            where C3 : struct
+            where C4 : struct
+            where C5 : struct
+            where C6 : struct
+            where C7 : struct
+            where C8 : struct
         {
             return new QueryBuilder<C1, C2, C3, C4, C5, C6, C7, C8>(_archetypes);
         }

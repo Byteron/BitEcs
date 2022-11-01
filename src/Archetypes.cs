@@ -46,7 +46,8 @@ namespace RelEcs
 
             var entity = new Entity(identity);
 
-            table.Storages[0].SetValue(entity, row);
+            var entityStorage = (Entity[])table.Storages[0];
+            entityStorage[row] = entity;
 
             return entity;
         }
@@ -136,12 +137,13 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public object GetComponent(StorageType type, Identity identity)
+        public ref T GetComponent<T>(Identity identity, Identity target)
         {
+            var type = StorageType.Create<T>(target);
             var meta = Meta[identity.Id];
             var table = Tables[meta.TableId];
-            var storage = table.GetStorage(type);
-            return storage.GetValue(meta.Row);
+            var storage = (T[])table.GetStorage(type);
+            return ref storage[meta.Row];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

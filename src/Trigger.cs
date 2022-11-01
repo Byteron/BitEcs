@@ -8,13 +8,13 @@ namespace RelEcs
         internal T Value;
     }
 
-    internal class SystemList
+    internal struct SystemList
     {
         public readonly List<Type> List;
         public SystemList() => List = ListPool<Type>.Get();
     }
 
-    internal class LifeTime
+    internal struct LifeTime
     {
         public int Value;
     }
@@ -28,12 +28,12 @@ namespace RelEcs
             var query = World.Query<Entity, SystemList, LifeTime>().Build();
             foreach (var (entity, systemList, lifeTime) in query)
             {
-                lifeTime.Value++;
-
-                if (lifeTime.Value < 2) return;
-
-                ListPool<Type>.Add(systemList.List);
-                World.Despawn(entity);
+                lifeTime.Value.Value++;
+                
+                if (lifeTime.Value.Value < 2) return;
+                
+                ListPool<Type>.Add(systemList.Value.List);
+                World.Despawn(entity.Value);
             }
         }
     }
