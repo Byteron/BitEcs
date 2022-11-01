@@ -19,7 +19,7 @@ namespace RelEcs
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public QueryBuilder Has<T>(Entity target = default)
         {
-            var typeIndex = StorageType.Create<T>(target?.Identity ?? Identity.None);
+            var typeIndex = StorageType.Create<T>(target.Identity);
             Mask.Has(typeIndex);
             return this;
         }
@@ -36,7 +36,7 @@ namespace RelEcs
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public QueryBuilder Not<T>(Entity target = default)
         {
-            var typeIndex = StorageType.Create<T>(target?.Identity ?? Identity.None);
+            var typeIndex = StorageType.Create<T>(target.Identity);
             Mask.Not(typeIndex);
             return this;
         }
@@ -53,7 +53,7 @@ namespace RelEcs
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public QueryBuilder Any<T>(Entity target = default)
         {
-            var typeIndex = StorageType.Create<T>(target?.Identity ?? Identity.None);
+            var typeIndex = StorageType.Create<T>(target.Identity);
             Mask.Any(typeIndex);
             return this;
         }
@@ -69,7 +69,7 @@ namespace RelEcs
     }
 
     public sealed class QueryBuilder<C> : QueryBuilder
-        where C : class
+        where C : struct
     {
         static readonly Func<Archetypes, Mask, List<Table>, Query> CreateQuery =
             (archetypes, mask, matchingTables) => new Query<C>(archetypes, mask, matchingTables);
@@ -124,8 +124,8 @@ namespace RelEcs
     }
 
     public sealed class QueryBuilder<C1, C2> : QueryBuilder
-        where C1 : class
-        where C2 : class
+        where C1 : struct
+        where C2 : struct
     {
         static readonly Func<Archetypes, Mask, List<Table>, Query> CreateQuery =
             (archetypes, mask, matchingTables) => new Query<C1, C2>(archetypes, mask, matchingTables);
@@ -180,9 +180,9 @@ namespace RelEcs
     }
 
     public sealed class QueryBuilder<C1, C2, C3> : QueryBuilder
-        where C1 : class
-        where C2 : class
-        where C3 : class
+        where C1 : struct
+        where C2 : struct
+        where C3 : struct
     {
         static readonly Func<Archetypes, Mask, List<Table>, Query> CreateQuery =
             (archetypes, mask, matchingTables) => new Query<C1, C2, C3>(archetypes, mask, matchingTables);
@@ -237,10 +237,10 @@ namespace RelEcs
     }
 
     public sealed class QueryBuilder<C1, C2, C3, C4> : QueryBuilder
-        where C1 : class
-        where C2 : class
-        where C3 : class
-        where C4 : class
+        where C1 : struct
+        where C2 : struct
+        where C3 : struct
+        where C4 : struct
     {
         static readonly Func<Archetypes, Mask, List<Table>, Query> CreateQuery =
             (archetypes, mask, matchingTables) => new Query<C1, C2, C3, C4>(archetypes, mask, matchingTables);
@@ -295,11 +295,11 @@ namespace RelEcs
     }
 
     public sealed class QueryBuilder<C1, C2, C3, C4, C5> : QueryBuilder
-        where C1 : class
-        where C2 : class
-        where C3 : class
-        where C4 : class
-        where C5 : class
+        where C1 : struct
+        where C2 : struct
+        where C3 : struct
+        where C4 : struct
+        where C5 : struct
     {
         static readonly Func<Archetypes, Mask, List<Table>, Query> CreateQuery =
             (archetypes, mask, matchingTables) => new Query<C1, C2, C3, C4, C5>(archetypes, mask, matchingTables);
@@ -354,12 +354,12 @@ namespace RelEcs
     }
 
     public sealed class QueryBuilder<C1, C2, C3, C4, C5, C6> : QueryBuilder
-        where C1 : class
-        where C2 : class
-        where C3 : class
-        where C4 : class
-        where C5 : class
-        where C6 : class
+        where C1 : struct
+        where C2 : struct
+        where C3 : struct
+        where C4 : struct
+        where C5 : struct
+        where C6 : struct
     {
         static readonly Func<Archetypes, Mask, List<Table>, Query> CreateQuery =
             (archetypes, mask, matchingTables) => new Query<C1, C2, C3, C4, C5, C6>(archetypes, mask, matchingTables);
@@ -414,13 +414,13 @@ namespace RelEcs
     }
 
     public sealed class QueryBuilder<C1, C2, C3, C4, C5, C6, C7> : QueryBuilder
-        where C1 : class
-        where C2 : class
-        where C3 : class
-        where C4 : class
-        where C5 : class
-        where C6 : class
-        where C7 : class
+        where C1 : struct
+        where C2 : struct
+        where C3 : struct
+        where C4 : struct
+        where C5 : struct
+        where C6 : struct
+        where C7 : struct
     {
         static readonly Func<Archetypes, Mask, List<Table>, Query> CreateQuery =
             (archetypes, mask, matchingTables) => new Query<C1, C2, C3, C4, C5, C6, C7>(archetypes, mask, matchingTables);
@@ -475,14 +475,14 @@ namespace RelEcs
     }
 
     public sealed class QueryBuilder<C1, C2, C3, C4, C5, C6, C7, C8> : QueryBuilder
-        where C1 : class
-        where C2 : class
-        where C3 : class
-        where C4 : class
-        where C5 : class
-        where C6 : class
-        where C7 : class
-        where C8 : class
+        where C1 : struct
+        where C2 : struct
+        where C3 : struct
+        where C4 : struct
+        where C5 : struct
+        where C6 : struct
+        where C7 : struct
+        where C8 : struct
     {
         static readonly Func<Archetypes, Mask, List<Table>, Query> CreateQuery =
             (archetypes, mask, matchingTables) => new Query<C1, C2, C3, C4, C5, C6, C7, C8>(archetypes, mask, matchingTables);
@@ -537,15 +537,15 @@ namespace RelEcs
     }
 
     public sealed class QueryBuilder<C1, C2, C3, C4, C5, C6, C7, C8, C9> : QueryBuilder
-        where C1 : class
-        where C2 : class
-        where C3 : class
-        where C4 : class
-        where C5 : class
-        where C6 : class
-        where C7 : class
-        where C8 : class
-        where C9 : class
+        where C1 : struct
+        where C2 : struct
+        where C3 : struct
+        where C4 : struct
+        where C5 : struct
+        where C6 : struct
+        where C7 : struct
+        where C8 : struct
+        where C9 : struct
     {
         static readonly Func<Archetypes, Mask, List<Table>, Query> CreateQuery =
             (archetypes, mask, matchingTables) => new Query<C1, C2, C3, C4, C5, C6, C7, C8, C9>(archetypes, mask, matchingTables);

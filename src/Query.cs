@@ -58,11 +58,12 @@ namespace RelEcs
     }
 
     public class TriggerQuery<C> : Query
-        where C : class
+        where C : struct
     {
         readonly Type _systemType;
 
-        public TriggerQuery(Archetypes archetypes, Mask mask, List<Table> tables, Type systemType) : base(archetypes, mask, tables)
+        public TriggerQuery(Archetypes archetypes, Mask mask, List<Table> tables, Type systemType) : base(archetypes,
+            mask, tables)
         {
             _systemType = systemType;
         }
@@ -80,7 +81,7 @@ namespace RelEcs
     }
 
     public class Query<C> : Query
-        where C : class
+        where C : struct
     {
         public Query(Archetypes archetypes, Mask mask, List<Table> tables) : base(archetypes, mask, tables)
         {
@@ -93,11 +94,11 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public C Get(Entity entity)
+        public ref C Get(Entity entity)
         {
             var meta = Archetypes.GetEntityMeta(entity.Identity);
             var storage = (C[])Storages[meta.TableId][0];
-            return storage[meta.Row];
+            return ref storage[meta.Row];
         }
 
         public Enumerator<C> GetEnumerator()
@@ -107,8 +108,8 @@ namespace RelEcs
     }
 
     public class Query<C1, C2> : Query
-        where C1 : class
-        where C2 : class
+        where C1 : struct
+        where C2 : struct
     {
         public Query(Archetypes archetypes, Mask mask, List<Table> tables) : base(archetypes, mask, tables)
         {
@@ -125,13 +126,13 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public (C1, C2) Get(Entity entity)
+        public RefValueTuple<C1, C2> Get(Entity entity)
         {
             var meta = Archetypes.GetEntityMeta(entity.Identity);
             var storages = Storages[meta.TableId];
             var storage1 = (C1[])storages[0];
             var storage2 = (C2[])storages[1];
-            return (storage1[meta.Row], storage2[meta.Row]);
+            return new RefValueTuple<C1, C2>(ref storage1[meta.Row], ref storage2[meta.Row]);
         }
 
         public Enumerator<C1, C2> GetEnumerator()
@@ -141,9 +142,9 @@ namespace RelEcs
     }
 
     public class Query<C1, C2, C3> : Query
-        where C1 : class
-        where C2 : class
-        where C3 : class
+        where C1 : struct
+        where C2 : struct
+        where C3 : struct
     {
         public Query(Archetypes archetypes, Mask mask, List<Table> tables) : base(archetypes, mask, tables)
         {
@@ -161,14 +162,15 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public (C1, C2, C3) Get(Entity entity)
+        public RefValueTuple<C1, C2, C3> Get(Entity entity)
         {
             var meta = Archetypes.GetEntityMeta(entity.Identity);
             var storages = Storages[meta.TableId];
             var storage1 = (C1[])storages[0];
             var storage2 = (C2[])storages[1];
             var storage3 = (C3[])storages[2];
-            return (storage1[meta.Row], storage2[meta.Row], storage3[meta.Row]);
+            return new RefValueTuple<C1, C2, C3>(ref storage1[meta.Row], ref storage2[meta.Row],
+                ref storage3[meta.Row]);
         }
 
         public Enumerator<C1, C2, C3> GetEnumerator()
@@ -178,10 +180,10 @@ namespace RelEcs
     }
 
     public class Query<C1, C2, C3, C4> : Query
-        where C1 : class
-        where C2 : class
-        where C3 : class
-        where C4 : class
+        where C1 : struct
+        where C2 : struct
+        where C3 : struct
+        where C4 : struct
     {
         public Query(Archetypes archetypes, Mask mask, List<Table> tables) : base(archetypes, mask, tables)
         {
@@ -200,7 +202,7 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public (C1, C2, C3, C4) Get(Entity entity)
+        public RefValueTuple<C1, C2, C3, C4> Get(Entity entity)
         {
             var meta = Archetypes.GetEntityMeta(entity.Identity);
             var storages = Storages[meta.TableId];
@@ -208,7 +210,8 @@ namespace RelEcs
             var storage2 = (C2[])storages[1];
             var storage3 = (C3[])storages[2];
             var storage4 = (C4[])storages[3];
-            return (storage1[meta.Row], storage2[meta.Row], storage3[meta.Row], storage4[meta.Row]);
+            return new RefValueTuple<C1, C2, C3, C4>(ref storage1[meta.Row], ref storage2[meta.Row],
+                ref storage3[meta.Row], ref storage4[meta.Row]);
         }
 
         public Enumerator<C1, C2, C3, C4> GetEnumerator()
@@ -218,11 +221,11 @@ namespace RelEcs
     }
 
     public class Query<C1, C2, C3, C4, C5> : Query
-        where C1 : class
-        where C2 : class
-        where C3 : class
-        where C4 : class
-        where C5 : class
+        where C1 : struct
+        where C2 : struct
+        where C3 : struct
+        where C4 : struct
+        where C5 : struct
     {
         public Query(Archetypes archetypes, Mask mask, List<Table> tables) : base(archetypes, mask, tables)
         {
@@ -242,7 +245,7 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public (C1, C2, C3, C4, C5) Get(Entity entity)
+        public RefValueTuple<C1, C2, C3, C4, C5> Get(Entity entity)
         {
             var meta = Archetypes.GetEntityMeta(entity.Identity);
             var storages = Storages[meta.TableId];
@@ -251,7 +254,8 @@ namespace RelEcs
             var storage3 = (C3[])storages[2];
             var storage4 = (C4[])storages[3];
             var storage5 = (C5[])storages[4];
-            return (storage1[meta.Row], storage2[meta.Row], storage3[meta.Row], storage4[meta.Row], storage5[meta.Row]);
+            return new RefValueTuple<C1, C2, C3, C4, C5>(ref storage1[meta.Row], ref storage2[meta.Row],
+                ref storage3[meta.Row], ref storage4[meta.Row], ref storage5[meta.Row]);
         }
 
         public Enumerator<C1, C2, C3, C4, C5> GetEnumerator()
@@ -261,12 +265,12 @@ namespace RelEcs
     }
 
     public class Query<C1, C2, C3, C4, C5, C6> : Query
-        where C1 : class
-        where C2 : class
-        where C3 : class
-        where C4 : class
-        where C5 : class
-        where C6 : class
+        where C1 : struct
+        where C2 : struct
+        where C3 : struct
+        where C4 : struct
+        where C5 : struct
+        where C6 : struct
     {
         public Query(Archetypes archetypes, Mask mask, List<Table> tables) : base(archetypes, mask, tables)
         {
@@ -287,7 +291,7 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public (C1, C2, C3, C4, C5, C6) Get(Entity entity)
+        public RefValueTuple<C1, C2, C3, C4, C5, C6> Get(Entity entity)
         {
             var meta = Archetypes.GetEntityMeta(entity.Identity);
             var storages = Storages[meta.TableId];
@@ -297,8 +301,9 @@ namespace RelEcs
             var storage4 = (C4[])storages[3];
             var storage5 = (C5[])storages[4];
             var storage6 = (C6[])storages[5];
-            return (storage1[meta.Row], storage2[meta.Row], storage3[meta.Row], storage4[meta.Row], storage5[meta.Row],
-                storage6[meta.Row]);
+            return new RefValueTuple<C1, C2, C3, C4, C5, C6>(ref storage1[meta.Row], ref storage2[meta.Row],
+                ref storage3[meta.Row], ref storage4[meta.Row], ref storage5[meta.Row],
+                ref storage6[meta.Row]);
         }
 
         public Enumerator<C1, C2, C3, C4, C5, C6> GetEnumerator()
@@ -308,13 +313,13 @@ namespace RelEcs
     }
 
     public class Query<C1, C2, C3, C4, C5, C6, C7> : Query
-        where C1 : class
-        where C2 : class
-        where C3 : class
-        where C4 : class
-        where C5 : class
-        where C6 : class
-        where C7 : class
+        where C1 : struct
+        where C2 : struct
+        where C3 : struct
+        where C4 : struct
+        where C5 : struct
+        where C6 : struct
+        where C7 : struct
     {
         public Query(Archetypes archetypes, Mask mask, List<Table> tables) : base(archetypes, mask, tables)
         {
@@ -336,7 +341,7 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public (C1, C2, C3, C4, C5, C6, C7) Get(Entity entity)
+        public RefValueTuple<C1, C2, C3, C4, C5, C6, C7> Get(Entity entity)
         {
             var meta = Archetypes.GetEntityMeta(entity.Identity);
             var storages = Storages[meta.TableId];
@@ -347,8 +352,9 @@ namespace RelEcs
             var storage5 = (C5[])storages[4];
             var storage6 = (C6[])storages[5];
             var storage7 = (C7[])storages[6];
-            return (storage1[meta.Row], storage2[meta.Row], storage3[meta.Row], storage4[meta.Row], storage5[meta.Row],
-                storage6[meta.Row], storage7[meta.Row]);
+            return new RefValueTuple<C1, C2, C3, C4, C5, C6, C7>(ref storage1[meta.Row], ref storage2[meta.Row],
+                ref storage3[meta.Row], ref storage4[meta.Row], ref storage5[meta.Row],
+                ref storage6[meta.Row], ref storage7[meta.Row]);
         }
 
         public Enumerator<C1, C2, C3, C4, C5, C6, C7> GetEnumerator()
@@ -358,14 +364,14 @@ namespace RelEcs
     }
 
     public class Query<C1, C2, C3, C4, C5, C6, C7, C8> : Query
-        where C1 : class
-        where C2 : class
-        where C3 : class
-        where C4 : class
-        where C5 : class
-        where C6 : class
-        where C7 : class
-        where C8 : class
+        where C1 : struct
+        where C2 : struct
+        where C3 : struct
+        where C4 : struct
+        where C5 : struct
+        where C6 : struct
+        where C7 : struct
+        where C8 : struct
     {
         public Query(Archetypes archetypes, Mask mask, List<Table> tables) : base(archetypes, mask, tables)
         {
@@ -388,7 +394,7 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public (C1, C2, C3, C4, C5, C6, C7, C8) Get(Entity entity)
+        public RefValueTuple<C1, C2, C3, C4, C5, C6, C7, C8> Get(Entity entity)
         {
             var meta = Archetypes.GetEntityMeta(entity.Identity);
             var storages = Storages[meta.TableId];
@@ -400,8 +406,9 @@ namespace RelEcs
             var storage6 = (C6[])storages[5];
             var storage7 = (C7[])storages[6];
             var storage8 = (C8[])storages[7];
-            return (storage1[meta.Row], storage2[meta.Row], storage3[meta.Row], storage4[meta.Row], storage5[meta.Row],
-                storage6[meta.Row], storage7[meta.Row], storage8[meta.Row]);
+            return new RefValueTuple<C1, C2, C3, C4, C5, C6, C7, C8>(ref storage1[meta.Row], ref storage2[meta.Row],
+                ref storage3[meta.Row], ref storage4[meta.Row], ref storage5[meta.Row],
+                ref storage6[meta.Row], ref storage7[meta.Row], ref storage8[meta.Row]);
         }
 
         public Enumerator<C1, C2, C3, C4, C5, C6, C7, C8> GetEnumerator()
@@ -411,15 +418,15 @@ namespace RelEcs
     }
 
     public class Query<C1, C2, C3, C4, C5, C6, C7, C8, C9> : Query
-        where C1 : class
-        where C2 : class
-        where C3 : class
-        where C4 : class
-        where C5 : class
-        where C6 : class
-        where C7 : class
-        where C8 : class
-        where C9 : class
+        where C1 : struct
+        where C2 : struct
+        where C3 : struct
+        where C4 : struct
+        where C5 : struct
+        where C6 : struct
+        where C7 : struct
+        where C8 : struct
+        where C9 : struct
     {
         public Query(Archetypes archetypes, Mask mask, List<Table> tables) : base(archetypes, mask, tables)
         {
@@ -443,7 +450,7 @@ namespace RelEcs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public (C1, C2, C3, C4, C5, C6, C7, C8, C9) Get(Entity entity)
+        public RefValueTuple<C1, C2, C3, C4, C5, C6, C7, C8, C9> Get(Entity entity)
         {
             var meta = Archetypes.GetEntityMeta(entity.Identity);
             var storages = Storages[meta.TableId];
@@ -456,8 +463,9 @@ namespace RelEcs
             var storage7 = (C7[])storages[6];
             var storage8 = (C8[])storages[7];
             var storage9 = (C9[])storages[8];
-            return (storage1[meta.Row], storage2[meta.Row], storage3[meta.Row], storage4[meta.Row], storage5[meta.Row],
-                storage6[meta.Row], storage7[meta.Row], storage8[meta.Row], storage9[meta.Row]);
+            return new RefValueTuple<C1, C2, C3, C4, C5, C6, C7, C8, C9>(ref storage1[meta.Row], ref storage2[meta.Row],
+                ref storage3[meta.Row], ref storage4[meta.Row], ref storage5[meta.Row],
+                ref storage6[meta.Row], ref storage7[meta.Row], ref storage8[meta.Row], ref storage9[meta.Row]);
         }
 
         public Enumerator<C1, C2, C3, C4, C5, C6, C7, C8, C9> GetEnumerator()
@@ -669,10 +677,10 @@ namespace RelEcs
             _storage = Tables[TableIndex].GetStorage<C>(Identity.None);
         }
 
-        public C Current
+        public Ref<C> Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => _storage[EntityIndex];
+            get => new(ref _storage[EntityIndex]);
         }
     }
 
@@ -694,10 +702,10 @@ namespace RelEcs
             _storage2 = Tables[TableIndex].GetStorage<C2>(Identity.None);
         }
 
-        public (C1, C2) Current
+        public RefValueTuple<C1, C2> Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (_storage1[EntityIndex], _storage2[EntityIndex]);
+            get => new(ref _storage1[EntityIndex], ref _storage2[EntityIndex]);
         }
     }
 
@@ -721,10 +729,10 @@ namespace RelEcs
             _storage3 = Tables[TableIndex].GetStorage<C3>(Identity.None);
         }
 
-        public (C1, C2, C3) Current
+        public RefValueTuple<C1, C2, C3> Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (_storage1[EntityIndex], _storage2[EntityIndex], _storage3[EntityIndex]);
+            get => new(ref _storage1[EntityIndex], ref _storage2[EntityIndex], ref _storage3[EntityIndex]);
         }
     }
 
@@ -750,10 +758,11 @@ namespace RelEcs
             _storage4 = Tables[TableIndex].GetStorage<C4>(Identity.None);
         }
 
-        public (C1, C2, C3, C4) Current
+        public RefValueTuple<C1, C2, C3, C4> Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (_storage1[EntityIndex], _storage2[EntityIndex], _storage3[EntityIndex], _storage4[EntityIndex]);
+            get => new(ref _storage1[EntityIndex], ref _storage2[EntityIndex], ref _storage3[EntityIndex],
+                ref _storage4[EntityIndex]);
         }
     }
 
@@ -781,11 +790,11 @@ namespace RelEcs
             _storage5 = Tables[TableIndex].GetStorage<C5>(Identity.None);
         }
 
-        public (C1, C2, C3, C4, C5) Current
+        public RefValueTuple<C1, C2, C3, C4, C5> Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (_storage1[EntityIndex], _storage2[EntityIndex], _storage3[EntityIndex], _storage4[EntityIndex],
-                _storage5[EntityIndex]);
+            get => new(ref _storage1[EntityIndex], ref _storage2[EntityIndex], ref _storage3[EntityIndex],
+                ref _storage4[EntityIndex], ref _storage5[EntityIndex]);
         }
     }
 
@@ -815,11 +824,11 @@ namespace RelEcs
             _storage6 = Tables[TableIndex].GetStorage<C6>(Identity.None);
         }
 
-        public (C1, C2, C3, C4, C5, C6) Current
+        public RefValueTuple<C1, C2, C3, C4, C5, C6> Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (_storage1[EntityIndex], _storage2[EntityIndex], _storage3[EntityIndex], _storage4[EntityIndex],
-                _storage5[EntityIndex], _storage6[EntityIndex]);
+            get => new(ref _storage1[EntityIndex], ref _storage2[EntityIndex], ref _storage3[EntityIndex],
+                ref _storage4[EntityIndex], ref _storage5[EntityIndex], ref _storage6[EntityIndex]);
         }
     }
 
@@ -851,11 +860,12 @@ namespace RelEcs
             _storage7 = Tables[TableIndex].GetStorage<C7>(Identity.None);
         }
 
-        public (C1, C2, C3, C4, C5, C6, C7) Current
+        public RefValueTuple<C1, C2, C3, C4, C5, C6, C7> Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (_storage1[EntityIndex], _storage2[EntityIndex], _storage3[EntityIndex], _storage4[EntityIndex],
-                _storage5[EntityIndex], _storage6[EntityIndex], _storage7[EntityIndex]);
+            get => new(ref _storage1[EntityIndex], ref _storage2[EntityIndex], ref _storage3[EntityIndex],
+                ref _storage4[EntityIndex], ref _storage5[EntityIndex], ref _storage6[EntityIndex],
+                ref _storage7[EntityIndex]);
         }
     }
 
@@ -889,11 +899,12 @@ namespace RelEcs
             _storage8 = Tables[TableIndex].GetStorage<C8>(Identity.None);
         }
 
-        public (C1, C2, C3, C4, C5, C6, C7, C8) Current
+        public RefValueTuple<C1, C2, C3, C4, C5, C6, C7, C8> Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (_storage1[EntityIndex], _storage2[EntityIndex], _storage3[EntityIndex], _storage4[EntityIndex],
-                _storage5[EntityIndex], _storage6[EntityIndex], _storage7[EntityIndex], _storage8[EntityIndex]);
+            get => new(ref _storage1[EntityIndex], ref _storage2[EntityIndex], ref _storage3[EntityIndex],
+                ref _storage4[EntityIndex], ref _storage5[EntityIndex], ref _storage6[EntityIndex],
+                ref _storage7[EntityIndex], ref _storage8[EntityIndex]);
         }
     }
 
@@ -929,12 +940,12 @@ namespace RelEcs
             _storage9 = Tables[TableIndex].GetStorage<C9>(Identity.None);
         }
 
-        public (C1, C2, C3, C4, C5, C6, C7, C8, C9) Current
+        public RefValueTuple<C1, C2, C3, C4, C5, C6, C7, C8, C9> Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (_storage1[EntityIndex], _storage2[EntityIndex], _storage3[EntityIndex], _storage4[EntityIndex],
-                _storage5[EntityIndex], _storage6[EntityIndex], _storage7[EntityIndex], _storage8[EntityIndex],
-                _storage9[EntityIndex]);
+            get => new(ref _storage1[EntityIndex], ref _storage2[EntityIndex], ref _storage3[EntityIndex],
+                ref _storage4[EntityIndex], ref _storage5[EntityIndex], ref _storage6[EntityIndex],
+                ref _storage7[EntityIndex], ref _storage8[EntityIndex], ref _storage9[EntityIndex]);
         }
     }
 }
