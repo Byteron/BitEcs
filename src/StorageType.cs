@@ -2,120 +2,119 @@ using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-namespace RelEcs
+namespace HypEcs;
+
+public struct StorageType : IComparable<StorageType>
 {
-    public struct StorageType : IComparable<StorageType>
+    public Type Type { get; private set; }
+    public ulong Value { get; private set; }
+    public bool IsTag { get; private set; }
+    public bool IsRelation { get; private set; }
+
+    public ushort TypeId
     {
-        public Type Type { get; private set; }
-        public ulong Value { get; private set; }
-        public bool IsTag { get; private set; }
-        public bool IsRelation { get; private set; }
-
-        public ushort TypeId
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => TypeIdConverter.Type(Value);
-        }
-
-        public Identity Identity
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => TypeIdConverter.Identity(Value);
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static StorageType Create<T>(Identity identity = default)
-        {
-            return new StorageType()
-            {
-                Value = TypeIdConverter.Value<T>(identity),
-                Type = typeof(T),
-                IsTag = TypeIdConverter.IsTag<T>(),
-                IsRelation = identity.Id > 0,
-            };
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int CompareTo(StorageType other)
-        {
-            return Value.CompareTo(other.Value);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override bool Equals(object obj)
-        {
-            return (obj is StorageType other) && Value == other.Value;
-        }
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(StorageType other)
-        {
-            return Value == other.Value;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override int GetHashCode()
-        {
-            return Value.GetHashCode();
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override string ToString()
-        {
-            return IsRelation ? $"{GetHashCode()} {Type.Name}::{Identity}" : $"{GetHashCode()} {Type.Name}";
-        }
-
-        public static bool operator ==(StorageType left, StorageType right) => left.Equals(right);
-        public static bool operator !=(StorageType left, StorageType right) => !left.Equals(right);
+        get => TypeIdConverter.Type(Value);
     }
-    
-    public static class TypeIdConverter
+
+    public Identity Identity
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ulong Value<T>(Identity identity)
+        get => TypeIdConverter.Identity(Value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static StorageType Create<T>(Identity identity = default)
+    {
+        return new StorageType()
         {
-            return TypeIdAssigner<T>.Id | (ulong)identity.Generation << 16 | (ulong)identity.Id << 32;
-        }
+            Value = TypeIdConverter.Value<T>(identity),
+            Type = typeof(T),
+            IsTag = TypeIdConverter.IsTag<T>(),
+            IsRelation = identity.Id > 0,
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int CompareTo(StorageType other)
+    {
+        return Value.CompareTo(other.Value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public override bool Equals(object obj)
+    {
+        return (obj is StorageType other) && Value == other.Value;
+    }
+        
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool Equals(StorageType other)
+    {
+        return Value == other.Value;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public override int GetHashCode()
+    {
+        return Value.GetHashCode();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public override string ToString()
+    {
+        return IsRelation ? $"{GetHashCode()} {Type.Name}::{Identity}" : $"{GetHashCode()} {Type.Name}";
+    }
+
+    public static bool operator ==(StorageType left, StorageType right) => left.Equals(right);
+    public static bool operator !=(StorageType left, StorageType right) => !left.Equals(right);
+}
+    
+public static class TypeIdConverter
+{
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong Value<T>(Identity identity)
+    {
+        return TypeIdAssigner<T>.Id | (ulong)identity.Generation << 16 | (ulong)identity.Id << 32;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Identity Identity(ulong value)
+    {
+        return new Identity((int)(value >> 32), (ushort)(value >> 16));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ushort Type(ulong value)
+    {
+        return (ushort)value;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsTag<T>()
+    {
+        return TypeIdAssigner<T>.IsTag;
+    }
+
+    class TypeIdAssigner
+    {
+        protected static ushort Counter;
+    }
+
+    // ReSharper disable once ClassNeverInstantiated.Local
+    class TypeIdAssigner<T> : TypeIdAssigner
+    {
+        // ReSharper disable once StaticMemberInGenericType
+        public static readonly ushort Id;
+
+        // ReSharper disable once StaticMemberInGenericType
+        public static readonly bool IsTag;
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Identity Identity(ulong value)
+        static TypeIdAssigner()
         {
-            return new Identity((int)(value >> 32), (ushort)(value >> 16));
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ushort Type(ulong value)
-        {
-            return (ushort)value;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsTag<T>()
-        {
-            return TypeIdAssigner<T>.IsTag;
-        }
-
-        class TypeIdAssigner
-        {
-            protected static ushort Counter;
-        }
-
-        // ReSharper disable once ClassNeverInstantiated.Local
-        class TypeIdAssigner<T> : TypeIdAssigner
-        {
-            // ReSharper disable once StaticMemberInGenericType
-            public static readonly ushort Id;
-
-            // ReSharper disable once StaticMemberInGenericType
-            public static readonly bool IsTag;
-
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            static TypeIdAssigner()
-            {
-                Id = ++Counter;
-                IsTag = typeof(T).GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public).Length == 0;
-            }
+            Id = ++Counter;
+            IsTag = typeof(T).GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public).Length == 0;
         }
     }
 }
