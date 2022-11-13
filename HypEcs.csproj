@@ -8,6 +8,6 @@
     <PackageLicenseUrl>https://github.com/Byteron/HypEcs/blob/main/LICENSE</PackageLicenseUrl>
     <Nullable>enable</Nullable>
     <WarningsAsErrors>Nullable</WarningsAsErrors>
-    <PackageVersion>1.1.0</PackageVersion>
+    <PackageVersion>1.2.0</PackageVersion>
   </PropertyGroup>
 </Project>

@@ -1,12 +1,13 @@
 # RelEcs
+
 ### A lightweight and easy to use entity component system with an effective feature set for making games.
 
 ## Components
 
 ```csharp
-// Components are simple classes.
-class Position { public int X, Y; }
-class Velocity { public int X, Y; }
+// Components are simple structs.
+struct Position { public int X, Y; }
+struct Velocity { public int X, Y; }
 ```
 
 ## Systems
@@ -19,11 +20,14 @@ public class MoveSystem : ISystem
     public void Run(World world)
     {
         // iterate sets of components.
-        foreach(var (pos, vel) in world.Query<Position, Velocity>())
-        {
-            pos.X += vel.X;
-            pos.Y += vel.Y;
-        }
+        var query = world.Query<Position, Velocity>().Build();
+        query.Run((count, positions, velocities) => {
+            for (var i = 0; i < count; i++)
+            {
+                positions[i].X += velocities[i].X;
+                positions[i].Y += velocities[i].Y;
+            }
+        });
     }
 }
 ```
@@ -61,10 +65,10 @@ public void Run(World world)
 ### Relations
 
 ```csharp
-// Like components, relations are classes.
-class Apples { }
-class Likes { }
-class Owes { public int Amount; }
+// Like components, relations are structs.
+struct Apples { }
+struct Likes { }
+struct Owes { public int Amount; }
 ```
 
 ```csharp
@@ -76,10 +80,10 @@ public void Run(World world)
     // Relations consist of components, associated with a "target".
     // The target can either be another component, or an entity.
     world.On(bob).Add<Likes>(typeof(Apples));
-    //   Component     ^^^^^^^^^^^^^^
+    //   Component           ^^^^^^^^^^^^^^
     
     world.On(frank).Add(new Owes { Amount = 100 }, bob);
-    //                                Entity ^^^
+    //                                      Entity ^^^
     
     // if you want to know if an entity has a component
     bool doesBobHaveApples = world.HasComponent<Apples>(bob);
@@ -100,56 +104,46 @@ public void Run(World world)
 {
     // With queries, we can get a list of components that we can iterate through.
     // A simple query looks like this
-    var query = world.Query<Position, Velocity>();
+    var query = world.Query<Position, Velocity>().Build();
     
     // Now we can loop through these components
-    foreach(var (pos, vel) in query)
+    query.Run((count, positions, velocities) => 
     {
-        pos.Value += vel.Value;
-    }
-            
+        for (var i = 0; i < count; i++)
+        {
+            positions[i].X += velocities[i].X;
+            positions[i].Y += velocities[i].Y;
+        }
+    });
+    
+    // we can also iterate through them using multithreading!
+    // for that, we simply replace `Run` with `RunParallel`
+    // note that HypEcs is an arche type based ECS.
+    // when running iterations multithreaded, that means we parallelise each *Table* in the ecs,
+    // not each component iteration. This means MultiThreading benefits from archetype fragmentation,
+    // but does not bring any benefits when there is only one archetype existing in the ecs that is iterated.
+    query.RunParallel((count, positions, velocities) => 
+    {
+        for (var i = 0; i < count; i++)
+        {
+            positions[i].X += velocities[i].X;
+            positions[i].Y += velocities[i].Y;
+        }
+    });
+    
     // You can create more complex, expressive queries through the QueryBuilder.
     // Here, we request every entity that has a Name component, owes money to Bob and does not have the Dead tag.
     var appleLovers = world.QueryBuilder<Entity, Name>().Has<Owes>(bob).Not<Dead>().Build();
     
     // Note that we only get the components inside Query<>.
     // Has<T>, Not<T> and Any<T> only filter, but we don't actually get T int he loop.
-    foreach(var (entity, name) in query)
+    appleLovers.Run((count, entities, names) => 
     {
-        Console.WriteLine($"Entity {entity} with name {name.Value} owes bob money and is still alive.")
-    }
-}
-```
-
-### Triggers
-
-```csharp
-// Triggers are also just classes and very similar to components.
-// They act much like a simplified, ECS version of C# events.
-class MyTrigger { }
-```
-
-```csharp
-public void Run(World world)
-{
-    // You can send a bunch of triggers inside of a system.
-    world.Send(new MyTrigger());
-    world.Send(new MyTrigger());
-    world.Send(new MyTrigger());
-    
-    // In any system, including the origin system, you can now receive these triggers.
-    foreach (var t in world.Receive<T>())
-    {
-        Console.WriteLine("It's a trigger!");
-    }
-    
-    // Output:
-    // It's a trigger!
-    // It's a trigger!
-    // It's a trigger!
-    
-    // NOTE: Triggers live until the end of the next frame, to make sure every system receives them.
-    // Each trigger is always received exactly ONCE per system.
+        for (var i = 0; i < count; i++)
+        {
+            Console.WriteLine($"Entity {entities[i]} with name {names[i].Value} owes bob money and is still alive.")
+        }
+    });
 }
 ```
 
