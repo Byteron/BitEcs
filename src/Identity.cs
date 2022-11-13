@@ -32,7 +32,7 @@ public readonly struct Identity
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         return (obj is Identity other) && Id == other.Id && Generation == other.Generation;
     }

@@ -19,7 +19,7 @@ public readonly struct Entity
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         return obj is Entity entity && Identity.Equals(entity.Identity);
     }

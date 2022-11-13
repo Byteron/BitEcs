@@ -8,7 +8,6 @@ public struct StorageType : IComparable<StorageType>
 {
     public Type Type { get; private set; }
     public ulong Value { get; private set; }
-    public bool IsTag { get; private set; }
     public bool IsRelation { get; private set; }
 
     public ushort TypeId
@@ -30,7 +29,6 @@ public struct StorageType : IComparable<StorageType>
         {
             Value = TypeIdConverter.Value<T>(identity),
             Type = typeof(T),
-            IsTag = TypeIdConverter.IsTag<T>(),
             IsRelation = identity.Id > 0,
         };
     }
@@ -42,7 +40,7 @@ public struct StorageType : IComparable<StorageType>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         return (obj is StorageType other) && Value == other.Value;
     }
@@ -89,12 +87,6 @@ public static class TypeIdConverter
         return (ushort)value;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsTag<T>()
-    {
-        return TypeIdAssigner<T>.IsTag;
-    }
-
     class TypeIdAssigner
     {
         protected static ushort Counter;
@@ -106,15 +98,11 @@ public static class TypeIdConverter
         // ReSharper disable once StaticMemberInGenericType
         public static readonly ushort Id;
 
-        // ReSharper disable once StaticMemberInGenericType
-        public static readonly bool IsTag;
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static TypeIdAssigner()
         {
             Id = ++Counter;
-            IsTag = typeof(T).GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public).Length == 0;
         }
     }
 }

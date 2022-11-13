@@ -5,7 +5,7 @@ namespace HypEcs;
 
 internal class Trigger<T>
 {
-    internal T Value;
+    internal T Value = default!;
 }
 
 internal struct SystemList
@@ -21,11 +21,9 @@ internal struct LifeTime
 
 internal class TriggerLifeTimeSystem : ISystem
 {
-    public World World { get; set; }
-
-    public void Run()
+    public void Run(World world)
     {
-        var query = World.Query<Entity, SystemList, LifeTime>().Build();
+        var query = world.Query<Entity, SystemList, LifeTime>().Build();
         foreach (var (entity, systemList, lifeTime) in query)
         {
             lifeTime.Value.Value++;
@@ -33,7 +31,7 @@ internal class TriggerLifeTimeSystem : ISystem
             if (lifeTime.Value.Value < 2) return;
                 
             ListPool<Type>.Add(systemList.Value.List);
-            World.Despawn(entity.Value);
+            world.Despawn(entity.Value);
         }
     }
 }

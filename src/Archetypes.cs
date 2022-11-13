@@ -94,7 +94,7 @@ public sealed class Archetypes
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void AddComponent(StorageType type, Identity identity, object data = default)
+    public void AddComponent(StorageType type, Identity identity, object data)
     {
         ref var meta = ref Meta[identity.Id];
         var oldTable = Tables[meta.TableId];
@@ -129,8 +129,6 @@ public sealed class Archetypes
 
         meta.Row = newRow;
         meta.TableId = newTable.Id;
-
-        if (type.IsTag) return;
 
         var storage = newTable.GetStorage(type);
         storage.SetValue(data, newRow);
@@ -345,15 +343,8 @@ public sealed class Archetypes
 
         foreach (var type in table.Types)
         {
-            if (type.IsTag)
-            {
-                list.Add((type, null));
-            }
-            else
-            {
-                var storage = table.GetStorage(type);
-                list.Add((type, storage.GetValue(meta.Row)));
-            }
+            var storage = table.GetStorage(type);
+            list.Add((type, storage.GetValue(meta.Row)!));
         }
 
         var array = list.ToArray();

@@ -6,5 +6,8 @@
     <Description>A lightweight and fast entity component system with an effective feature set for making games.</Description>
     <PackageProjectUrl>https://github.com/Byteron/HypEcs</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/Byteron/HypEcs/blob/main/LICENSE</PackageLicenseUrl>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>Nullable</WarningsAsErrors>
+    <PackageVersion>1.1.0</PackageVersion>
   </PropertyGroup>
 </Project>

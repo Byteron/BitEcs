@@ -18,8 +18,6 @@ public sealed class World
 
     readonly Archetypes _archetypes = new();
 
-    internal readonly List<(Type, TimeSpan)> SystemExecutionTimes = new();
-
     readonly TriggerLifeTimeSystem _triggerLifeTimeSystem = new();
 
     public WorldInfo Info => _worldInfo;
@@ -80,15 +78,13 @@ public sealed class World
     public void AddComponent<T>(Entity entity) where T : struct
     {
         var type = StorageType.Create<T>(Identity.None);
-        if (!type.IsTag) throw new Exception($"{type} is tag component, use Add(new Component()) instead");
-        _archetypes.AddComponent(type, entity.Identity);
+        _archetypes.AddComponent(type, entity.Identity, new T());
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void AddComponent<T>(Entity entity, T component) where T : struct
     {
         var type = StorageType.Create<T>(Identity.None);
-        if (type.IsTag) throw new Exception($"{type} is tag component, Add<T>() instead");
         _archetypes.AddComponent(type, entity.Identity, component);
     }
 
@@ -135,15 +131,13 @@ public sealed class World
     public void AddComponent<T>(Entity entity, Entity target) where T : struct
     {
         var type = StorageType.Create<T>(target.Identity);
-        if (!type.IsTag) throw new Exception();
-        _archetypes.AddComponent(type, entity.Identity);
+        _archetypes.AddComponent(type, entity.Identity, new T());
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void AddComponent<T>(Entity entity, T component, Entity target) where T : struct
     {
         var type = StorageType.Create<T>(target.Identity);
-        if (type.IsTag) throw new Exception();
         _archetypes.AddComponent(type, entity.Identity, component);
     }
 
@@ -175,7 +169,7 @@ public sealed class World
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetElement<T>(out T element) where T : class
+    public bool TryGetElement<T>(out T? element) where T : class
     {
         if (!HasElement<T>())
         {
@@ -368,16 +362,9 @@ public sealed class World
         _worldInfo.ArchetypeCount = _archetypes.Tables.Count;
         // info.RelationCount = relationCount;
         _worldInfo.ElementCount = _archetypes.Tables[_archetypes.Meta[_world.Identity.Id].TableId].Types.Count;
-        _worldInfo.CachedQueryCount = _archetypes.Queries.Count;
-
-        _worldInfo.SystemCount = SystemExecutionTimes.Count;
-
-        _worldInfo.SystemExecutionTimes.Clear();
-        _worldInfo.SystemExecutionTimes.AddRange(SystemExecutionTimes);
+        _worldInfo.QueryCount = _archetypes.Queries.Count;
 
         _triggerLifeTimeSystem.Run(this);
-
-        SystemExecutionTimes.Clear();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -398,13 +385,10 @@ public sealed class WorldInfo
 
     // public int RelationCount;
     public int ElementCount;
-    public int SystemCount;
-    public List<(Type, TimeSpan)> SystemExecutionTimes;
-    public int CachedQueryCount;
+    public int QueryCount;
 
     public WorldInfo(int id)
     {
         WorldId = id;
-        SystemExecutionTimes = new List<(Type, TimeSpan)>();
     }
 }

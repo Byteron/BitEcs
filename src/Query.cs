@@ -605,8 +605,8 @@ public class TriggerEnumerator : IEnumerator, IDisposable
 
 public class TriggerEnumerator<C> : TriggerEnumerator
 {
-    Trigger<C>[] _storage;
-    SystemList[] _systemLists;
+    Trigger<C>[] _storage = default!;
+    SystemList[] _systemLists = default!;
     readonly Type _systemType;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -663,7 +663,7 @@ public class TriggerEnumerator<C> : TriggerEnumerator
 
 public class Enumerator<C> : Enumerator
 {
-    C[] _storage;
+    C[] _storage = default!;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
@@ -686,8 +686,8 @@ public class Enumerator<C> : Enumerator
 
 public class Enumerator<C1, C2> : Enumerator
 {
-    C1[] _storage1;
-    C2[] _storage2;
+    C1[] _storage1 = default!;
+    C2[] _storage2 = default!;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
@@ -711,9 +711,9 @@ public class Enumerator<C1, C2> : Enumerator
 
 public class Enumerator<C1, C2, C3> : Enumerator
 {
-    C1[] _storage1;
-    C2[] _storage2;
-    C3[] _storage3;
+    C1[] _storage1 = default!;
+    C2[] _storage2 = default!;
+    C3[] _storage3 = default!;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
@@ -738,10 +738,10 @@ public class Enumerator<C1, C2, C3> : Enumerator
 
 public class Enumerator<C1, C2, C3, C4> : Enumerator
 {
-    C1[] _storage1;
-    C2[] _storage2;
-    C3[] _storage3;
-    C4[] _storage4;
+    C1[] _storage1 = default!;
+    C2[] _storage2 = default!;
+    C3[] _storage3 = default!;
+    C4[] _storage4 = default!;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
@@ -768,11 +768,11 @@ public class Enumerator<C1, C2, C3, C4> : Enumerator
 
 public class Enumerator<C1, C2, C3, C4, C5> : Enumerator
 {
-    C1[] _storage1;
-    C2[] _storage2;
-    C3[] _storage3;
-    C4[] _storage4;
-    C5[] _storage5;
+    C1[] _storage1 = default!;
+    C2[] _storage2 = default!;
+    C3[] _storage3 = default!;
+    C4[] _storage4 = default!;
+    C5[] _storage5 = default!;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
@@ -800,12 +800,12 @@ public class Enumerator<C1, C2, C3, C4, C5> : Enumerator
 
 public class Enumerator<C1, C2, C3, C4, C5, C6> : Enumerator
 {
-    C1[] _storage1;
-    C2[] _storage2;
-    C3[] _storage3;
-    C4[] _storage4;
-    C5[] _storage5;
-    C6[] _storage6;
+    C1[] _storage1 = default!;
+    C2[] _storage2 = default!;
+    C3[] _storage3 = default!;
+    C4[] _storage4 = default!;
+    C5[] _storage5 = default!;
+    C6[] _storage6 = default!;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
@@ -834,13 +834,13 @@ public class Enumerator<C1, C2, C3, C4, C5, C6> : Enumerator
 
 public class Enumerator<C1, C2, C3, C4, C5, C6, C7> : Enumerator
 {
-    C1[] _storage1;
-    C2[] _storage2;
-    C3[] _storage3;
-    C4[] _storage4;
-    C5[] _storage5;
-    C6[] _storage6;
-    C7[] _storage7;
+    C1[] _storage1 = default!;
+    C2[] _storage2 = default!;
+    C3[] _storage3 = default!;
+    C4[] _storage4 = default!;
+    C5[] _storage5 = default!;
+    C6[] _storage6 = default!;
+    C7[] _storage7 = default!;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
@@ -871,14 +871,14 @@ public class Enumerator<C1, C2, C3, C4, C5, C6, C7> : Enumerator
 
 public class Enumerator<C1, C2, C3, C4, C5, C6, C7, C8> : Enumerator
 {
-    C1[] _storage1;
-    C2[] _storage2;
-    C3[] _storage3;
-    C4[] _storage4;
-    C5[] _storage5;
-    C6[] _storage6;
-    C7[] _storage7;
-    C8[] _storage8;
+    C1[] _storage1 = default!;
+    C2[] _storage2 = default!;
+    C3[] _storage3 = default!;
+    C4[] _storage4 = default!;
+    C5[] _storage5 = default!;
+    C6[] _storage6 = default!;
+    C7[] _storage7 = default!;
+    C8[] _storage8 = default!;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
@@ -910,15 +910,15 @@ public class Enumerator<C1, C2, C3, C4, C5, C6, C7, C8> : Enumerator
 
 public class Enumerator<C1, C2, C3, C4, C5, C6, C7, C8, C9> : Enumerator
 {
-    C1[] _storage1;
-    C2[] _storage2;
-    C3[] _storage3;
-    C4[] _storage4;
-    C5[] _storage5;
-    C6[] _storage6;
-    C7[] _storage7;
-    C8[] _storage8;
-    C9[] _storage9;
+    C1[] _storage1 = default!;
+    C2[] _storage2 = default!;
+    C3[] _storage3 = default!;
+    C4[] _storage4 = default!;
+    C5[] _storage5 = default!;
+    C6[] _storage6 = default!;
+    C7[] _storage7 = default!;
+    C8[] _storage8 = default!;
+    C9[] _storage9 = default!;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
