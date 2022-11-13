@@ -1,7 +1,7 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace HypEcs;
 
@@ -57,29 +57,6 @@ public class Query
     }
 }
 
-public class TriggerQuery<C> : Query
-    where C : struct
-{
-    readonly Type _systemType;
-
-    public TriggerQuery(Archetypes archetypes, Mask mask, List<Table> tables, Type systemType) : base(archetypes,
-        mask, tables)
-    {
-        _systemType = systemType;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected override Array[] GetStorages(Table table)
-    {
-        return new Array[] { table.GetStorage<Trigger<C>>(Identity.None) };
-    }
-
-    public TriggerEnumerator<C> GetEnumerator()
-    {
-        return new TriggerEnumerator<C>(Tables, _systemType);
-    }
-}
-
 public class Query<C> : Query
     where C : struct
 {
@@ -101,9 +78,44 @@ public class Query<C> : Query
         return ref storage[meta.Row];
     }
 
-    public Enumerator<C> GetEnumerator()
+    public void Run(Action<int, C[]> action)
     {
-        return new Enumerator<C>(Archetypes, Tables);
+        Archetypes.Lock();
+        
+        for (var t = 0; t < Tables.Count; t++)
+        {
+            var table = Tables[t];
+
+            if (table.IsEmpty) continue;
+
+            var storages = Storages[table.Id];
+
+            var s1 = (C[])storages[0];
+
+            action(table.Count, s1);
+        }
+        
+        Archetypes.Unlock();
+    }
+    
+    public void RunParallel(Action<int, C[]> action)
+    {
+        Archetypes.Lock();
+
+        Parallel.For(0, Tables.Count, t =>
+        {
+            var table = Tables[t];
+            
+            if (table.IsEmpty) return;
+
+            var storages = Storages[table.Id];
+            
+            var s = (C[])storages[0];
+            
+            action(table.Count, s);
+        });
+        
+        Archetypes.Unlock();
     }
 }
 
@@ -135,9 +147,46 @@ public class Query<C1, C2> : Query
         return new RefValueTuple<C1, C2>(ref storage1[meta.Row], ref storage2[meta.Row]);
     }
 
-    public Enumerator<C1, C2> GetEnumerator()
+    public void Run(Action<int, C1[], C2[]> action)
     {
-        return new Enumerator<C1, C2>(Archetypes, Tables);
+        Archetypes.Lock();
+        
+        for (var t = 0; t < Tables.Count; t++)
+        {
+            var table = Tables[t];
+
+            if (table.IsEmpty) continue;
+
+            var storages = Storages[table.Id];
+
+            var s1 = (C1[])storages[0];
+            var s2 = (C2[])storages[1];
+
+            action(table.Count, s1, s2);
+        }
+        
+        Archetypes.Unlock();
+    }
+    
+    public void RunParallel(Action<int, C1[], C2[]> action)
+    {
+        Archetypes.Lock();
+
+        Parallel.For(0, Tables.Count, t =>
+        {
+            var table = Tables[t];
+
+            if (table.IsEmpty) return;
+
+            var storages = Storages[table.Id];
+
+            var s1 = (C1[])storages[0];
+            var s2 = (C2[])storages[1];
+
+            action(table.Count, s1, s2);
+        });
+        
+        Archetypes.Unlock();
     }
 }
 
@@ -173,9 +222,48 @@ public class Query<C1, C2, C3> : Query
             ref storage3[meta.Row]);
     }
 
-    public Enumerator<C1, C2, C3> GetEnumerator()
+    public void Run(Action<int, C1[], C2[], C3[]> action)
     {
-        return new Enumerator<C1, C2, C3>(Archetypes, Tables);
+        Archetypes.Lock();
+        
+        for (var t = 0; t < Tables.Count; t++)
+        {
+            var table = Tables[t];
+
+            if (table.IsEmpty) continue;
+
+            var storages = Storages[table.Id];
+
+            var s1 = (C1[])storages[0];
+            var s2 = (C2[])storages[1];
+            var s3 = (C3[])storages[2];
+
+            action(table.Count, s1, s2, s3);
+        }
+        
+        Archetypes.Unlock();
+    }
+    
+    public void RunParallel(Action<int, C1[], C2[], C3[]> action)
+    {
+        Archetypes.Lock();
+
+        Parallel.For(0, Tables.Count, t =>
+        {
+            var table = Tables[t];
+            
+            if (table.IsEmpty) return;
+
+            var storages = Storages[table.Id];
+            
+            var s1 = (C1[])storages[0];
+            var s2 = (C2[])storages[1];
+            var s3 = (C3[])storages[2];
+            
+            action(table.Count, s1, s2, s3);
+        });
+        
+        Archetypes.Unlock();
     }
 }
 
@@ -214,9 +302,50 @@ public class Query<C1, C2, C3, C4> : Query
             ref storage3[meta.Row], ref storage4[meta.Row]);
     }
 
-    public Enumerator<C1, C2, C3, C4> GetEnumerator()
+    public void Run(Action<int, C1[], C2[], C3[], C4[]> action)
     {
-        return new Enumerator<C1, C2, C3, C4>(Archetypes, Tables);
+        Archetypes.Lock();
+        
+        for (var t = 0; t < Tables.Count; t++)
+        {
+            var table = Tables[t];
+
+            if (table.IsEmpty) continue;
+
+            var storages = Storages[table.Id];
+
+            var s1 = (C1[])storages[0];
+            var s2 = (C2[])storages[1];
+            var s3 = (C3[])storages[2];
+            var s4 = (C4[])storages[3];
+
+            action(table.Count, s1, s2, s3, s4);
+        }
+        
+        Archetypes.Unlock();
+    }
+    
+    public void RunParallel(Action<int, C1[], C2[], C3[], C4[]> action)
+    {
+        Archetypes.Lock();
+
+        Parallel.For(0, Tables.Count, t =>
+        {
+            var table = Tables[t];
+            
+            if (table.IsEmpty) return;
+
+            var storages = Storages[table.Id];
+            
+            var s1 = (C1[])storages[0];
+            var s2 = (C2[])storages[1];
+            var s3 = (C3[])storages[2];
+            var s4 = (C4[])storages[3];
+            
+            action(table.Count, s1, s2, s3, s4);
+        });
+        
+        Archetypes.Unlock();
     }
 }
 
@@ -258,9 +387,52 @@ public class Query<C1, C2, C3, C4, C5> : Query
             ref storage3[meta.Row], ref storage4[meta.Row], ref storage5[meta.Row]);
     }
 
-    public Enumerator<C1, C2, C3, C4, C5> GetEnumerator()
+    public void Run(Action<int, C1[], C2[], C3[], C4[], C5[]> action)
     {
-        return new Enumerator<C1, C2, C3, C4, C5>(Archetypes, Tables);
+        Archetypes.Lock();
+        
+        for (var t = 0; t < Tables.Count; t++)
+        {
+            var table = Tables[t];
+
+            if (table.IsEmpty) continue;
+
+            var storages = Storages[table.Id];
+
+            var s1 = (C1[])storages[0];
+            var s2 = (C2[])storages[1];
+            var s3 = (C3[])storages[2];
+            var s4 = (C4[])storages[3];
+            var s5 = (C5[])storages[4];
+
+            action(table.Count, s1, s2, s3, s4, s5);
+        }
+        
+        Archetypes.Unlock();
+    }
+    
+    public void RunParallel(Action<int, C1[], C2[], C3[], C4[], C5[]> action)
+    {
+        Archetypes.Lock();
+
+        Parallel.For(0, Tables.Count, t =>
+        {
+            var table = Tables[t];
+            
+            if (table.IsEmpty) return;
+
+            var storages = Storages[table.Id];
+            
+            var s1 = (C1[])storages[0];
+            var s2 = (C2[])storages[1];
+            var s3 = (C3[])storages[2];
+            var s4 = (C4[])storages[3];
+            var s5 = (C5[])storages[4];
+            
+            action(table.Count, s1, s2, s3, s4, s5);
+        });
+        
+        Archetypes.Unlock();
     }
 }
 
@@ -306,9 +478,54 @@ public class Query<C1, C2, C3, C4, C5, C6> : Query
             ref storage6[meta.Row]);
     }
 
-    public Enumerator<C1, C2, C3, C4, C5, C6> GetEnumerator()
+    public void Run(Action<int, C1[], C2[], C3[], C4[], C5[], C6[]> action)
     {
-        return new Enumerator<C1, C2, C3, C4, C5, C6>(Archetypes, Tables);
+        Archetypes.Lock();
+        
+        for (var t = 0; t < Tables.Count; t++)
+        {
+            var table = Tables[t];
+
+            if (table.IsEmpty) continue;
+
+            var storages = Storages[table.Id];
+
+            var s1 = (C1[])storages[0];
+            var s2 = (C2[])storages[1];
+            var s3 = (C3[])storages[2];
+            var s4 = (C4[])storages[3];
+            var s5 = (C5[])storages[4];
+            var s6 = (C6[])storages[5];
+
+            action(table.Count, s1, s2, s3, s4, s5, s6);
+        }
+        
+        Archetypes.Unlock();
+    }
+    
+    public void RunParallel(Action<int, C1[], C2[], C3[], C4[], C5[], C6[]> action)
+    {
+        Archetypes.Lock();
+
+        Parallel.For(0, Tables.Count, t =>
+        {
+            var table = Tables[t];
+            
+            if (table.IsEmpty) return;
+
+            var storages = Storages[table.Id];
+            
+            var s1 = (C1[])storages[0];
+            var s2 = (C2[])storages[1];
+            var s3 = (C3[])storages[2];
+            var s4 = (C4[])storages[3];
+            var s5 = (C5[])storages[4];
+            var s6 = (C6[])storages[5];
+            
+            action(table.Count, s1, s2, s3, s4, s5, s6);
+        });
+        
+        Archetypes.Unlock();
     }
 }
 
@@ -357,9 +574,56 @@ public class Query<C1, C2, C3, C4, C5, C6, C7> : Query
             ref storage6[meta.Row], ref storage7[meta.Row]);
     }
 
-    public Enumerator<C1, C2, C3, C4, C5, C6, C7> GetEnumerator()
+    public void Run(Action<int, C1[], C2[], C3[], C4[], C5[], C6[], C7[]> action)
     {
-        return new Enumerator<C1, C2, C3, C4, C5, C6, C7>(Archetypes, Tables);
+        Archetypes.Lock();
+        
+        for (var t = 0; t < Tables.Count; t++)
+        {
+            var table = Tables[t];
+
+            if (table.IsEmpty) continue;
+
+            var storages = Storages[table.Id];
+
+            var s1 = (C1[])storages[0];
+            var s2 = (C2[])storages[1];
+            var s3 = (C3[])storages[2];
+            var s4 = (C4[])storages[3];
+            var s5 = (C5[])storages[4];
+            var s6 = (C6[])storages[5];
+            var s7 = (C7[])storages[6];
+
+            action(table.Count, s1, s2, s3, s4, s5, s6, s7);
+        }
+        
+        Archetypes.Unlock();
+    }
+    
+    public void RunParallel(Action<int, C1[], C2[], C3[], C4[], C5[], C6[], C7[]> action)
+    {
+        Archetypes.Lock();
+
+        Parallel.For(0, Tables.Count, t =>
+        {
+            var table = Tables[t];
+            
+            if (table.IsEmpty) return;
+
+            var storages = Storages[table.Id];
+            
+            var s1 = (C1[])storages[0];
+            var s2 = (C2[])storages[1];
+            var s3 = (C3[])storages[2];
+            var s4 = (C4[])storages[3];
+            var s5 = (C5[])storages[4];
+            var s6 = (C6[])storages[5];
+            var s7 = (C7[])storages[6];
+            
+            action(table.Count, s1, s2, s3, s4, s5, s6, s7);
+        });
+        
+        Archetypes.Unlock();
     }
 }
 
@@ -411,9 +675,58 @@ public class Query<C1, C2, C3, C4, C5, C6, C7, C8> : Query
             ref storage6[meta.Row], ref storage7[meta.Row], ref storage8[meta.Row]);
     }
 
-    public Enumerator<C1, C2, C3, C4, C5, C6, C7, C8> GetEnumerator()
+    public void Run(Action<int, C1[], C2[], C3[], C4[], C5[], C6[], C7[], C8[]> action)
     {
-        return new Enumerator<C1, C2, C3, C4, C5, C6, C7, C8>(Archetypes, Tables);
+        Archetypes.Lock();
+        
+        for (var t = 0; t < Tables.Count; t++)
+        {
+            var table = Tables[t];
+
+            if (table.IsEmpty) continue;
+
+            var storages = Storages[table.Id];
+
+            var s1 = (C1[])storages[0];
+            var s2 = (C2[])storages[1];
+            var s3 = (C3[])storages[2];
+            var s4 = (C4[])storages[3];
+            var s5 = (C5[])storages[4];
+            var s6 = (C6[])storages[5];
+            var s7 = (C7[])storages[6];
+            var s8 = (C8[])storages[7];
+
+            action(table.Count, s1, s2, s3, s4, s5, s6, s7, s8);
+        }
+        
+        Archetypes.Unlock();
+    }
+    
+    public void RunParallel(Action<int, C1[], C2[], C3[], C4[], C5[], C6[], C7[], C8[]> action)
+    {
+        Archetypes.Lock();
+
+        Parallel.For(0, Tables.Count, t =>
+        {
+            var table = Tables[t];
+            
+            if (table.IsEmpty) return;
+
+            var storages = Storages[table.Id];
+            
+            var s1 = (C1[])storages[0];
+            var s2 = (C2[])storages[1];
+            var s3 = (C3[])storages[2];
+            var s4 = (C4[])storages[3];
+            var s5 = (C5[])storages[4];
+            var s6 = (C6[])storages[5];
+            var s7 = (C7[])storages[6];
+            var s8 = (C8[])storages[7];
+            
+            action(table.Count, s1, s2, s3, s4, s5, s6, s7, s8);
+        });
+        
+        Archetypes.Unlock();
     }
 }
 
@@ -468,483 +781,59 @@ public class Query<C1, C2, C3, C4, C5, C6, C7, C8, C9> : Query
             ref storage6[meta.Row], ref storage7[meta.Row], ref storage8[meta.Row], ref storage9[meta.Row]);
     }
 
-    public Enumerator<C1, C2, C3, C4, C5, C6, C7, C8, C9> GetEnumerator()
+    public void Run(Action<int, C1[], C2[], C3[], C4[], C5[], C6[], C7[], C8[], C9[]> action)
     {
-        return new Enumerator<C1, C2, C3, C4, C5, C6, C7, C8, C9>(Archetypes, Tables);
-    }
-}
-
-public class Enumerator : IEnumerator, IDisposable
-{
-    protected readonly List<Table> Tables;
-
-    protected int TableIndex;
-    protected int EntityIndex;
-
-    readonly Archetypes _archetypes;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected Enumerator(Archetypes archetypes, List<Table> tables)
-    {
-        _archetypes = archetypes;
-        Tables = tables;
-
-        _archetypes.Lock();
-
-        Reset();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool MoveNext()
-    {
-        if (TableIndex == Tables.Count) return false;
-
-        if (++EntityIndex < Tables[TableIndex].Count) return true;
-
-        EntityIndex = 0;
-        TableIndex++;
-
-        while (TableIndex < Tables.Count && Tables[TableIndex].IsEmpty)
+        Archetypes.Lock();
+        
+        for (var t = 0; t < Tables.Count; t++)
         {
-            TableIndex++;
+            var table = Tables[t];
+            
+            if (table.IsEmpty) continue;
+
+            var storages = Storages[table.Id];
+            
+            var s1 = (C1[])storages[0];
+            var s2 = (C2[])storages[1];
+            var s3 = (C3[])storages[2];
+            var s4 = (C4[])storages[3];
+            var s5 = (C5[])storages[4];
+            var s6 = (C6[])storages[5];
+            var s7 = (C7[])storages[6];
+            var s8 = (C8[])storages[7];
+            var s9 = (C9[])storages[8];
+            
+            action(table.Count, s1, s2, s3, s4, s5, s6, s7, s8, s9);
         }
-
-        UpdateStorage();
-
-        return TableIndex < Tables.Count && EntityIndex < Tables[TableIndex].Count;
+        
+        Archetypes.Unlock();
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Reset()
+    
+    public void RunParallel(Action<int, C1[], C2[], C3[], C4[], C5[], C6[], C7[], C8[], C9[]> action)
     {
-        TableIndex = 0;
-        EntityIndex = -1;
+        Archetypes.Lock();
 
-        UpdateStorage();
-    }
-
-    object IEnumerator.Current
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => throw new Exception("Invalid Enumerator");
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Dispose()
-    {
-        _archetypes.Unlock();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected virtual void UpdateStorage()
-    {
-        throw new Exception("Invalid Enumerator");
-    }
-}
-
-public class TriggerEnumerator : IEnumerator, IDisposable
-{
-    protected readonly List<Table> Tables;
-
-    protected int TableIndex;
-    protected int EntityIndex;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected TriggerEnumerator(List<Table> tables)
-    {
-        Tables = tables;
-        Reset();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool MoveNext()
-    {
-        if (TableIndex == Tables.Count) return false;
-
-        if (++EntityIndex < Tables[TableIndex].Count) return true;
-
-        EntityIndex = 0;
-        TableIndex++;
-
-        while (TableIndex < Tables.Count && Tables[TableIndex].IsEmpty)
+        Parallel.For(0, Tables.Count, t =>
         {
-            TableIndex++;
-        }
+            var table = Tables[t];
+            
+            if (table.IsEmpty) return;
 
-        UpdateStorage();
-
-        return TableIndex < Tables.Count && EntityIndex < Tables[TableIndex].Count;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Reset()
-    {
-        TableIndex = 0;
-        EntityIndex = -1;
-
-        UpdateStorage();
-    }
-
-    object IEnumerator.Current
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => throw new Exception("Invalid Enumerator");
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Dispose()
-    {
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected virtual void UpdateStorage()
-    {
-        throw new Exception("Invalid Enumerator");
-    }
-}
-
-public class TriggerEnumerator<C> : TriggerEnumerator
-{
-    Trigger<C>[] _storage = default!;
-    SystemList[] _systemLists = default!;
-    readonly Type _systemType;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public TriggerEnumerator(List<Table> tables, Type systemType) : base(tables)
-    {
-        _systemType = systemType;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public new bool MoveNext()
-    {
-        if (TableIndex == Tables.Count) return false;
-
-        EntityIndex++;
-
-        while (Tables[TableIndex].Count > EntityIndex && _systemLists[EntityIndex].List.Contains(_systemType))
-        {
-            EntityIndex++;
-        }
-
-        if (EntityIndex < Tables[TableIndex].Count) return true;
-
-        EntityIndex = 0;
-        TableIndex++;
-
-        while (TableIndex < Tables.Count && Tables[TableIndex].IsEmpty)
-        {
-            TableIndex++;
-        }
-
-        UpdateStorage();
-
-        return TableIndex < Tables.Count && EntityIndex < Tables[TableIndex].Count;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected override void UpdateStorage()
-    {
-        if (TableIndex == Tables.Count) return;
-        _storage = Tables[TableIndex].GetStorage<Trigger<C>>(Identity.None);
-        _systemLists = Tables[TableIndex].GetStorage<SystemList>(Identity.None);
-    }
-
-    public C Current
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get
-        {
-            _systemLists[EntityIndex].List.Add(_systemType);
-            return _storage[EntityIndex].Value;
-        }
-    }
-}
-
-public class Enumerator<C> : Enumerator
-{
-    C[] _storage = default!;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
-    {
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected override void UpdateStorage()
-    {
-        if (TableIndex == Tables.Count) return;
-        _storage = Tables[TableIndex].GetStorage<C>(Identity.None);
-    }
-
-    public Ref<C> Current
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new(ref _storage[EntityIndex]);
-    }
-}
-
-public class Enumerator<C1, C2> : Enumerator
-{
-    C1[] _storage1 = default!;
-    C2[] _storage2 = default!;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
-    {
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected override void UpdateStorage()
-    {
-        if (TableIndex == Tables.Count) return;
-        _storage1 = Tables[TableIndex].GetStorage<C1>(Identity.None);
-        _storage2 = Tables[TableIndex].GetStorage<C2>(Identity.None);
-    }
-
-    public RefValueTuple<C1, C2> Current
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new(ref _storage1[EntityIndex], ref _storage2[EntityIndex]);
-    }
-}
-
-public class Enumerator<C1, C2, C3> : Enumerator
-{
-    C1[] _storage1 = default!;
-    C2[] _storage2 = default!;
-    C3[] _storage3 = default!;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
-    {
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected override void UpdateStorage()
-    {
-        if (TableIndex == Tables.Count) return;
-        _storage1 = Tables[TableIndex].GetStorage<C1>(Identity.None);
-        _storage2 = Tables[TableIndex].GetStorage<C2>(Identity.None);
-        _storage3 = Tables[TableIndex].GetStorage<C3>(Identity.None);
-    }
-
-    public RefValueTuple<C1, C2, C3> Current
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new(ref _storage1[EntityIndex], ref _storage2[EntityIndex], ref _storage3[EntityIndex]);
-    }
-}
-
-public class Enumerator<C1, C2, C3, C4> : Enumerator
-{
-    C1[] _storage1 = default!;
-    C2[] _storage2 = default!;
-    C3[] _storage3 = default!;
-    C4[] _storage4 = default!;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
-    {
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected override void UpdateStorage()
-    {
-        if (TableIndex == Tables.Count) return;
-        _storage1 = Tables[TableIndex].GetStorage<C1>(Identity.None);
-        _storage2 = Tables[TableIndex].GetStorage<C2>(Identity.None);
-        _storage3 = Tables[TableIndex].GetStorage<C3>(Identity.None);
-        _storage4 = Tables[TableIndex].GetStorage<C4>(Identity.None);
-    }
-
-    public RefValueTuple<C1, C2, C3, C4> Current
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new(ref _storage1[EntityIndex], ref _storage2[EntityIndex], ref _storage3[EntityIndex],
-            ref _storage4[EntityIndex]);
-    }
-}
-
-public class Enumerator<C1, C2, C3, C4, C5> : Enumerator
-{
-    C1[] _storage1 = default!;
-    C2[] _storage2 = default!;
-    C3[] _storage3 = default!;
-    C4[] _storage4 = default!;
-    C5[] _storage5 = default!;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
-    {
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected override void UpdateStorage()
-    {
-        if (TableIndex == Tables.Count) return;
-        _storage1 = Tables[TableIndex].GetStorage<C1>(Identity.None);
-        _storage2 = Tables[TableIndex].GetStorage<C2>(Identity.None);
-        _storage3 = Tables[TableIndex].GetStorage<C3>(Identity.None);
-        _storage4 = Tables[TableIndex].GetStorage<C4>(Identity.None);
-        _storage5 = Tables[TableIndex].GetStorage<C5>(Identity.None);
-    }
-
-    public RefValueTuple<C1, C2, C3, C4, C5> Current
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new(ref _storage1[EntityIndex], ref _storage2[EntityIndex], ref _storage3[EntityIndex],
-            ref _storage4[EntityIndex], ref _storage5[EntityIndex]);
-    }
-}
-
-public class Enumerator<C1, C2, C3, C4, C5, C6> : Enumerator
-{
-    C1[] _storage1 = default!;
-    C2[] _storage2 = default!;
-    C3[] _storage3 = default!;
-    C4[] _storage4 = default!;
-    C5[] _storage5 = default!;
-    C6[] _storage6 = default!;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
-    {
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected override void UpdateStorage()
-    {
-        if (TableIndex == Tables.Count) return;
-        _storage1 = Tables[TableIndex].GetStorage<C1>(Identity.None);
-        _storage2 = Tables[TableIndex].GetStorage<C2>(Identity.None);
-        _storage3 = Tables[TableIndex].GetStorage<C3>(Identity.None);
-        _storage4 = Tables[TableIndex].GetStorage<C4>(Identity.None);
-        _storage5 = Tables[TableIndex].GetStorage<C5>(Identity.None);
-        _storage6 = Tables[TableIndex].GetStorage<C6>(Identity.None);
-    }
-
-    public RefValueTuple<C1, C2, C3, C4, C5, C6> Current
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new(ref _storage1[EntityIndex], ref _storage2[EntityIndex], ref _storage3[EntityIndex],
-            ref _storage4[EntityIndex], ref _storage5[EntityIndex], ref _storage6[EntityIndex]);
-    }
-}
-
-public class Enumerator<C1, C2, C3, C4, C5, C6, C7> : Enumerator
-{
-    C1[] _storage1 = default!;
-    C2[] _storage2 = default!;
-    C3[] _storage3 = default!;
-    C4[] _storage4 = default!;
-    C5[] _storage5 = default!;
-    C6[] _storage6 = default!;
-    C7[] _storage7 = default!;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
-    {
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected override void UpdateStorage()
-    {
-        if (TableIndex == Tables.Count) return;
-        _storage1 = Tables[TableIndex].GetStorage<C1>(Identity.None);
-        _storage2 = Tables[TableIndex].GetStorage<C2>(Identity.None);
-        _storage3 = Tables[TableIndex].GetStorage<C3>(Identity.None);
-        _storage4 = Tables[TableIndex].GetStorage<C4>(Identity.None);
-        _storage5 = Tables[TableIndex].GetStorage<C5>(Identity.None);
-        _storage6 = Tables[TableIndex].GetStorage<C6>(Identity.None);
-        _storage7 = Tables[TableIndex].GetStorage<C7>(Identity.None);
-    }
-
-    public RefValueTuple<C1, C2, C3, C4, C5, C6, C7> Current
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new(ref _storage1[EntityIndex], ref _storage2[EntityIndex], ref _storage3[EntityIndex],
-            ref _storage4[EntityIndex], ref _storage5[EntityIndex], ref _storage6[EntityIndex],
-            ref _storage7[EntityIndex]);
-    }
-}
-
-public class Enumerator<C1, C2, C3, C4, C5, C6, C7, C8> : Enumerator
-{
-    C1[] _storage1 = default!;
-    C2[] _storage2 = default!;
-    C3[] _storage3 = default!;
-    C4[] _storage4 = default!;
-    C5[] _storage5 = default!;
-    C6[] _storage6 = default!;
-    C7[] _storage7 = default!;
-    C8[] _storage8 = default!;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
-    {
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected override void UpdateStorage()
-    {
-        if (TableIndex == Tables.Count) return;
-        _storage1 = Tables[TableIndex].GetStorage<C1>(Identity.None);
-        _storage2 = Tables[TableIndex].GetStorage<C2>(Identity.None);
-        _storage3 = Tables[TableIndex].GetStorage<C3>(Identity.None);
-        _storage4 = Tables[TableIndex].GetStorage<C4>(Identity.None);
-        _storage5 = Tables[TableIndex].GetStorage<C5>(Identity.None);
-        _storage6 = Tables[TableIndex].GetStorage<C6>(Identity.None);
-        _storage7 = Tables[TableIndex].GetStorage<C7>(Identity.None);
-        _storage8 = Tables[TableIndex].GetStorage<C8>(Identity.None);
-    }
-
-    public RefValueTuple<C1, C2, C3, C4, C5, C6, C7, C8> Current
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new(ref _storage1[EntityIndex], ref _storage2[EntityIndex], ref _storage3[EntityIndex],
-            ref _storage4[EntityIndex], ref _storage5[EntityIndex], ref _storage6[EntityIndex],
-            ref _storage7[EntityIndex], ref _storage8[EntityIndex]);
-    }
-}
-
-public class Enumerator<C1, C2, C3, C4, C5, C6, C7, C8, C9> : Enumerator
-{
-    C1[] _storage1 = default!;
-    C2[] _storage2 = default!;
-    C3[] _storage3 = default!;
-    C4[] _storage4 = default!;
-    C5[] _storage5 = default!;
-    C6[] _storage6 = default!;
-    C7[] _storage7 = default!;
-    C8[] _storage8 = default!;
-    C9[] _storage9 = default!;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Enumerator(Archetypes archetypes, List<Table> tables) : base(archetypes, tables)
-    {
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected override void UpdateStorage()
-    {
-        if (TableIndex == Tables.Count) return;
-        _storage1 = Tables[TableIndex].GetStorage<C1>(Identity.None);
-        _storage2 = Tables[TableIndex].GetStorage<C2>(Identity.None);
-        _storage3 = Tables[TableIndex].GetStorage<C3>(Identity.None);
-        _storage4 = Tables[TableIndex].GetStorage<C4>(Identity.None);
-        _storage5 = Tables[TableIndex].GetStorage<C5>(Identity.None);
-        _storage6 = Tables[TableIndex].GetStorage<C6>(Identity.None);
-        _storage7 = Tables[TableIndex].GetStorage<C7>(Identity.None);
-        _storage8 = Tables[TableIndex].GetStorage<C8>(Identity.None);
-        _storage9 = Tables[TableIndex].GetStorage<C9>(Identity.None);
-    }
-
-    public RefValueTuple<C1, C2, C3, C4, C5, C6, C7, C8, C9> Current
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new(ref _storage1[EntityIndex], ref _storage2[EntityIndex], ref _storage3[EntityIndex],
-            ref _storage4[EntityIndex], ref _storage5[EntityIndex], ref _storage6[EntityIndex],
-            ref _storage7[EntityIndex], ref _storage8[EntityIndex], ref _storage9[EntityIndex]);
+            var storages = Storages[table.Id];
+            
+            var s1 = (C1[])storages[0];
+            var s2 = (C2[])storages[1];
+            var s3 = (C3[])storages[2];
+            var s4 = (C4[])storages[3];
+            var s5 = (C5[])storages[4];
+            var s6 = (C6[])storages[5];
+            var s7 = (C7[])storages[6];
+            var s8 = (C8[])storages[7];
+            var s9 = (C9[])storages[8];
+            
+            action(table.Count, s1, s2, s3, s4, s5, s6, s7, s8, s9);
+        });
+        
+        Archetypes.Unlock();
     }
 }

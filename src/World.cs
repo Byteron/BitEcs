@@ -18,8 +18,6 @@ public sealed class World
 
     readonly Archetypes _archetypes = new();
 
-    readonly TriggerLifeTimeSystem _triggerLifeTimeSystem = new();
-
     public WorldInfo Info => _worldInfo;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -52,7 +50,14 @@ public sealed class World
     public void DespawnAllWith<T>() where T : struct
     {
         var query = Query<Entity>().Has<T>().Build();
-        foreach (var entity in query) Despawn(entity.Value);
+        
+        query.Run((count, entities) =>
+        {
+            for (var i = 0; i < count; i++)
+            {
+                Despawn(entities[i]);
+            }
+        });
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -220,68 +225,6 @@ public sealed class World
         _archetypes.RemoveComponent(type, _world.Identity);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Send<T>(T trigger) where T : struct
-    {
-        var entity = _archetypes.Spawn();
-        _archetypes.AddComponent(StorageType.Create<SystemList>(), entity.Identity, new SystemList());
-        _archetypes.AddComponent(StorageType.Create<LifeTime>(), entity.Identity, new LifeTime());
-        _archetypes.AddComponent(StorageType.Create<Trigger<T>>(), entity.Identity, new Trigger<T> { Value = trigger });
-    }
-        
-    // TODO: maybe move this into _archetypes
-    readonly Dictionary<Type, Dictionary<int, Query>> _triggerQueries = new();
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public TriggerQuery<T> Receive<T>(ISystem system) where T : struct
-    {
-        var mask = MaskPool.Get();
-
-        mask.Has(StorageType.Create<Trigger<T>>(Identity.None));
-
-        var hash = mask.GetHashCode();
-
-        if (!_triggerQueries.TryGetValue(system.GetType(), out var dict))
-        {
-            dict = new Dictionary<int, Query>();
-            _triggerQueries.Add(system.GetType(), dict);
-        }
-
-        if (dict.TryGetValue(hash, out var query))
-        {
-            MaskPool.Add(mask);
-            return (TriggerQuery<T>)query;
-        }
-            
-        // TODO: This is kind of hacky. Figure out a better way to make sure trigger queries have the right tables
-        var dummy = _archetypes.Spawn();
-        _archetypes.AddComponent(StorageType.Create<SystemList>(), dummy.Identity, new SystemList());
-        _archetypes.AddComponent(StorageType.Create<LifeTime>(), dummy.Identity, new LifeTime());
-        _archetypes.AddComponent(StorageType.Create<Trigger<T>>(), dummy.Identity, new Trigger<T> { Value = default });
-        _archetypes.Despawn(dummy.Identity);
-
-        var matchingTables = new List<Table>();
-
-        var type = mask.HasTypes[0];
-        if (!_archetypes.TablesByType.TryGetValue(type, out var typeTables))
-        {
-            typeTables = new List<Table>();
-            _archetypes.TablesByType[type] = typeTables;
-        }
-
-        foreach (var table in typeTables)
-        {
-            if (!_archetypes.IsMaskCompatibleWith(mask, table)) continue;
-
-            matchingTables.Add(table);
-        }
-
-        query = new TriggerQuery<T>(_archetypes, mask, matchingTables, system.GetType());
-        dict.Add(hash, query);
-
-        return (TriggerQuery<T>)query;
-    }
-
     public QueryBuilder<Entity> Query()
     {
         return new QueryBuilder<Entity>(_archetypes);
@@ -363,8 +306,6 @@ public sealed class World
         // info.RelationCount = relationCount;
         _worldInfo.ElementCount = _archetypes.Tables[_archetypes.Meta[_world.Identity.Id].TableId].Types.Count;
         _worldInfo.QueryCount = _archetypes.Queries.Count;
-
-        _triggerLifeTimeSystem.Run(this);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
